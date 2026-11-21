@@ -83,9 +83,11 @@ cp .env.example .env.local   # then paste your Gemini API key
 npm run dev                  # http://localhost:3000
 ```
 
-`GEMINI_API_KEY` is required for reasoning analysis, question generation and reteach plans. Optional: `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`. Without a key, the app still runs on its deterministic fallbacks.
+`GEMINI_API_KEY` is required for reasoning analysis, question generation and reteach plans. Without a key, the app still runs on its deterministic fallbacks.
 
-**Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · Zustand (state persisted in the browser) · Google Gen AI SDK (`@google/genai`) · deployed on Vercel.
+**Models and resilience.** Calls go through a model chain, `gemini-3.5-flash-lite` → `gemini-2.5-flash` → `gemini-3.8-flash`, with per-attempt timeouts and instant failover on overload (503), quota (429) or timeout. Spoken reasoning prefers `gemini-2.5-flash`, which was fastest on audio in our tests. Override with `GEMINI_MODELS="model-a,model-b"`. Typical latency in testing: typed reasoning 1.4–3.4 s, handwriting photo about 2.5 s, voice about 6 s, generate-and-verify about 7 s.
+
+**Stack:** Next.js 15 (App Router) · TypeScript · Tailwind CSS 4 · Zustand (state persisted in the browser) · Google Gen AI SDK (`@google/genai`, v1beta API) · deployed on Vercel.
 
 **Demo data:** the teacher dashboard includes a simulated class of 36 students, so it's populated in a demo. Your own live session appears alongside them, marked *(live)*. The simulated responses also seed each question's difficulty calibration.
 
