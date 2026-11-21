@@ -1,11 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <defs>
-    <clipPath id="c"><circle cx="32" cy="32" r="24"/></clipPath>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="#fdfdfb"/>
-  <circle cx="32" cy="32" r="24" fill="#ffffff" stroke="#1f3bb3" stroke-width="4"/>
-  <g clip-path="url(#c)">
-    <path d="M6 36 C 18 31, 26 40, 38 35 S 54 31, 60 34 L 60 60 L 6 60 Z" fill="#1f3bb3"/>
-  </g>
-  <path d="M10 46 C 4 26, 22 6, 44 8 C 60 10, 62 30, 56 44" fill="none" stroke="#e03131" stroke-width="3.2" stroke-linecap="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="8" y="8" width="52" height="52" rx="14" fill="#17171c"/><rect x="4" y="4" width="52" height="52" rx="14" fill="#3355ff" stroke="#17171c" stroke-width="4"/><text x="30" y="42" text-anchor="middle" font-family="Nirmala UI, Kohinoor Devanagari, Devanagari Sangam MN, Noto Sans Devanagari, Mangal, sans-serif" font-size="32" font-weight="700" fill="#ffffff">स</text><circle cx="54" cy="10" r="8" fill="#ffd23f" stroke="#17171c" stroke-width="4"/></svg>

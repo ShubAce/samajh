@@ -1,6 +1,7 @@
 "use client";
 
-import { useId } from "react";
+import { animate, useReducedMotion } from "motion/react";
+import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 /** Mastery bar: outlined track, flat colour fill. */
@@ -46,11 +47,34 @@ export function InkBar({
   );
 }
 
-/** Overall mastery: a round flask filling with blue, with a gently moving surface. */
-export function InkWell({ p, size = 112, caption }: { p: number; size?: number; caption?: string }) {
+/**
+ * Overall mastery: a round flask filling with blue, with a gently moving surface.
+ * On mount it fills from `from` (default empty) up to `p`, and later changes of `p` animate from the current level.
+ */
+export function InkWell({ p, size = 112, caption, from = 0 }: { p: number; size?: number; caption?: string; from?: number }) {
   const uid = useId().replace(/:/g, "");
+  const reduce = useReducedMotion();
+  const last = useRef(reduce ? p : from);
+  const [shown, setShown] = useState(last.current);
+  useEffect(() => {
+    if (reduce) {
+      last.current = p;
+      setShown(p);
+      return;
+    }
+    const c = animate(last.current, p, {
+      duration: 1.4,
+      delay: 0.15,
+      ease: [0.2, 0.8, 0.2, 1],
+      onUpdate: (v) => {
+        last.current = v;
+        setShown(v);
+      },
+    });
+    return () => c.stop();
+  }, [p, reduce]);
   const r = size / 2;
-  const level = size - Math.max(0.06, Math.min(0.97, p)) * size;
+  const level = size - Math.max(0.06, Math.min(0.97, shown)) * size;
   const w = size * 2;
   const wave = `M0,${level} C${w * 0.125},${level - 6} ${w * 0.375},${level + 6} ${w * 0.5},${level} S${w * 0.875},${level - 6} ${w},${level} L${w},${size} L0,${size} Z`;
   return (
@@ -77,7 +101,7 @@ export function InkWell({ p, size = 112, caption }: { p: number; size?: number; 
           <span
             className="display tabular rounded-[10px] border-2 border-line bg-white px-2 py-0.5 text-[22px] font-extrabold leading-none text-navy"
           >
-            {Math.round(p * 100)}%
+            {Math.round(shown * 100)}%
           </span>
         </div>
       </div>
@@ -86,15 +110,38 @@ export function InkWell({ p, size = 112, caption }: { p: number; size?: number; 
   );
 }
 
-/** Chapter progress: chunky outlined tube in the chapter's colour */
-export function InkTube({ label, p, color = "var(--color-ink)" }: { label: string; p: number; color?: string }) {
+/**
+ * Chapter progress: chunky outlined tube in the chapter's colour.
+ * The fill sweeps in after `delay` ms (InkBar's width transition does the sweep); the % label always shows the final value.
+ */
+export function InkTube({
+  label,
+  p,
+  color = "var(--color-ink)",
+  delay,
+}: {
+  label: string;
+  p: number;
+  color?: string;
+  delay?: number;
+}) {
+  const reduce = useReducedMotion();
+  const [shown, setShown] = useState(reduce ? p : 0);
+  useEffect(() => {
+    if (reduce) {
+      setShown(p);
+      return;
+    }
+    const t = setTimeout(() => setShown(p), delay ?? 0);
+    return () => clearTimeout(t);
+  }, [p, delay, reduce]);
   return (
     <div className="grid min-w-[120px] flex-1 gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[13.5px] font-bold text-navy">{label}</span>
         <span className="tabular text-[13px] font-extrabold text-navy">{Math.round(p * 100)}%</span>
       </div>
-      <InkBar p={p} color={color} height={12} />
+      <InkBar p={shown} color={color} height={12} />
     </div>
   );
 }

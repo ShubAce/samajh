@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowRight, CalendarClock, FastForward, History, Network, Target } from "lucide-react";
+import { ArrowRight, CalendarClock, Check, ChevronRight, FastForward, History, Network, Target } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ConceptMap } from "@/components/ConceptMap";
 import { InkBar, InkDot, InkTube, InkWell } from "@/components/Ink";
+import { CountUp } from "@/components/Motion";
 import { MarginNote } from "@/components/RedPen";
 import { Button, ButtonLink, Pill, Sheet } from "@/components/ui";
 import { CHAPTERS, CONCEPT_BY_ID, CONCEPTS, descendantsOf } from "@/lib/curriculum/concepts";
@@ -52,30 +54,38 @@ function LearnHome() {
   const dueNow = Object.values(s.cards).filter((c) => c.due <= now).length;
 
   return (
-    <div className="grid gap-6">
+    // minmax(0,1fr) columns throughout: a long row can't widen the cards past a phone's width
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <Sheet className="graph-paper-faint flex flex-wrap items-center gap-x-8 gap-y-5 px-5 py-5 sm:px-7">
         <InkWell p={overall} caption="overall mastery" />
         <div className="min-w-[260px] flex-1">
           <p className="text-[15px] text-slate">Hi {s.student.name}. Here&rsquo;s what Samajh thinks you understand right now.</p>
           <h1 className="display mt-1 text-[32px] font-bold text-navy sm:text-[38px]">Your Class 10 Physics map</h1>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-            {CHAPTERS.map((c) => (
-              <InkTube key={c.id} label={c.short} p={chapters[c.id]} color={c.color} />
+            {CHAPTERS.map((c, i) => (
+              <InkTube key={c.id} label={c.short} p={chapters[c.id]} color={c.color} delay={300 + i * 120} />
             ))}
           </div>
         </div>
         <dl className="grid min-w-[190px] gap-2 border-navy/10 text-[14px] sm:border-l sm:pl-7">
-          <Stat value={`${secure}/${CONCEPTS.length}`} label="concepts secure" />
-          <Stat value={String(checked)} label="checked directly" />
-          <Stat value={String(activeMis)} label={activeMis === 1 ? "misconception to fix" : "misconceptions to fix"} tone={activeMis ? "red" : undefined} />
-          <Stat value={String(dueNow)} label={dueNow === 1 ? "review due" : "reviews due"} />
+          <Stat
+            value={
+              <>
+                <Count to={secure} />/{CONCEPTS.length}
+              </>
+            }
+            label="concepts secure"
+          />
+          <Stat value={<Count to={checked} />} label="checked directly" />
+          <Stat value={<Count to={activeMis} />} label={activeMis === 1 ? "misconception to fix" : "misconceptions to fix"} tone={activeMis ? "red" : undefined} />
+          <Stat value={<Count to={dueNow} />} label={dueNow === 1 ? "review due" : "reviews due"} />
         </dl>
       </Sheet>
 
-      <NextActionCard action={action} />
+      <NextActionCard action={action} misCount={activeMis} dueCount={dueNow} />
 
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div className="grid min-w-0 gap-6">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6">
         <Sheet className="overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-5 py-3">
             <p className="flex items-center gap-2 text-[15px] font-semibold text-navy">
@@ -90,6 +100,7 @@ function LearnHome() {
                 misconceptions={s.misconceptions}
                 selected={selected}
                 onSelect={(id) => setSelected((cur) => (cur === id ? null : id))}
+                focus={action.conceptId ?? action.dueConceptIds?.[0] ?? null}
               />
             </div>
           </div>
@@ -113,7 +124,13 @@ function LearnHome() {
   );
 }
 
-function Stat({ value, label, tone }: { value: string; label: string; tone?: "red" }) {
+/** A stat that counts up on arrival; with reduced motion it shows the final value at once. */
+function Count({ to }: { to: number }) {
+  const reduce = useReducedMotion();
+  return reduce ? <span className="tabular">{to}</span> : <CountUp to={to} />;
+}
+
+function Stat({ value, label, tone }: { value: React.ReactNode; label: string; tone?: "red" }) {
   return (
     <div className="flex items-baseline gap-2">
       <dt className={cn("tabular w-12 text-right text-[19px] font-bold", tone === "red" ? "text-redpen" : "text-navy")}>{value}</dt>
@@ -150,7 +167,24 @@ function NoStudent() {
   );
 }
 
-function NextActionCard({ action }: { action: NextAction }) {
+/** The tutor policy's priority ladder, in the order nextBestAction() checks it. */
+const LADDER = ["fix", "review", "learn", "stretch"] as const;
+type Rung = (typeof LADDER)[number];
+const RUNG_LABEL: Record<Rung, string> = {
+  fix: "Fix misconceptions",
+  review: "Review fading concepts",
+  learn: "Learn the next concept",
+  stretch: "Stretch",
+};
+/** why an earlier rung was passed over: the policy found nothing to do there */
+const RUNG_SKIPPED: Record<Rung, string> = {
+  fix: "Fix misconceptions · none confirmed",
+  review: "Review fading concepts · none due",
+  learn: "Learn · all secure",
+  stretch: "Stretch",
+};
+
+function NextActionCard({ action, misCount, dueCount }: { action: NextAction; misCount: number; dueCount: number }) {
   const icon =
     action.kind === "fix" ? (
       <span className="hand text-[28px] leading-none text-redpen">!</span>
@@ -159,14 +193,57 @@ function NextActionCard({ action }: { action: NextAction }) {
     ) : (
       <Target className="size-5" />
     );
+  const idx = LADDER.indexOf(action.kind as Rung);
+  const chosen: Record<Rung, string> = {
+    fix: `Fix misconceptions · ${misCount} open`,
+    review: `Review fading concepts · ${dueCount} due`,
+    learn: "Learn the next concept",
+    stretch: "Stretch",
+  };
   return (
-    <div className="relative overflow-hidden next-step rounded-[20px] px-5 py-4 sm:px-6 sm:py-5">
+    <div className="relative overflow-hidden next-step rounded-[20px] px-5 py-4 sm:px-6 sm:py-5" style={{ animation: "pop-in 500ms 100ms both" }}>
       <div className="flex flex-wrap items-center gap-4">
         <span className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-line bg-white text-navy shadow-[2px_2px_0_var(--color-line)]">{icon}</span>
-        <div className="min-w-0 flex-1">
+        {/* 220px basis: on a phone the button wraps below instead of squeezing this column */}
+        <div className="min-w-0 flex-[1_1_220px]">
           <p className="text-[13.5px] font-semibold text-slate">Your next best step, chosen by the tutor agent</p>
           <h2 className="mt-0.5 text-[21px] font-bold leading-tight text-navy sm:text-[23px]">{action.title}</h2>
           <p className="mt-1 max-w-[70ch] text-[15px] leading-snug text-navy/80">{action.why}</p>
+          {idx >= 0 && (
+            <ol key={action.kind} aria-label="How the tutor agent decided" className="mt-3 flex flex-wrap items-center gap-1.5 text-[12.5px] font-bold">
+              <li className="mr-1 text-navy/65">How I decided:</li>
+              {LADDER.map((k, i) => (
+                <Fragment key={k}>
+                  {i > 0 && (
+                    <li aria-hidden className="flex">
+                      <ChevronRight className="size-3.5 text-navy/40" />
+                    </li>
+                  )}
+                  {i === idx ? (
+                    <li
+                      aria-current="step"
+                      className="inline-flex h-7 items-center gap-1 rounded-full border-2 border-line bg-white px-2.5 text-navy shadow-[2px_2px_0_var(--color-line)]"
+                      style={{ animation: "pop-in 420ms cubic-bezier(.2,.9,.3,1.3) 450ms both" }}
+                    >
+                      <Check className="size-3.5 text-good" strokeWidth={3} aria-hidden />
+                      {chosen[k]}
+                    </li>
+                  ) : (
+                    <li
+                      className={
+                        i < idx
+                          ? "inline-flex h-7 items-center rounded-full border-[1.5px] border-line/25 bg-white/40 px-2.5 text-navy/45 line-through decoration-navy/30"
+                          : "inline-flex h-7 items-center rounded-full border-[1.5px] border-dashed border-line/35 px-2.5 text-navy/55"
+                      }
+                      style={{ animation: `rise 360ms ${150 + i * 90}ms both` }}
+                    >
+                      {i < idx ? RUNG_SKIPPED[k] : `${RUNG_LABEL[k]} · later`}
+                    </li>
+                  )}
+                </Fragment>
+              ))}
+            </ol>
+          )}
         </div>
         <ButtonLink href={actionHref(action)} size="lg" className="shrink-0">
           {action.cta} <ArrowRight className="size-4" />
@@ -394,14 +471,18 @@ function RecentActivity() {
       <h3 className="flex items-center gap-2 text-[17px] font-bold text-navy">
         <History className="size-4 text-ink" /> Recent answers
       </h3>
-      <ul className="mt-3 grid gap-x-8 gap-y-2 md:grid-cols-2">
+      <ul className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-x-8 gap-y-2 md:grid-cols-2">
         {recent.map((a) => (
-          <li key={a.id} className="flex items-center gap-3 text-[14px]">
+          <li key={a.id} className="flex min-w-0 items-center gap-3 text-[14px]">
             <span className={cn("grid size-5 shrink-0 place-items-center rounded-full text-[11px] font-bold text-white", a.correct ? "bg-good" : "bg-redpen")}>
               {a.correct ? "✓" : "✗"}
             </span>
             <span className="min-w-0 flex-1 truncate text-navy">{CONCEPT_BY_ID[a.conceptId]?.title}</span>
-            {a.reasoningMode && <Pill tone="ink" className="shrink-0">{a.reasoningMode === "photo" ? "photo" : a.reasoningMode === "voice" ? "voice" : "typed"}</Pill>}
+            {a.reasoningMode && (
+              <Pill tone="ink" className="hidden shrink-0 sm:inline-flex">
+                {a.reasoningMode === "photo" ? "photo" : a.reasoningMode === "voice" ? "voice" : "typed"}
+              </Pill>
+            )}
             <span className={cn("tabular shrink-0 text-[12.5px]", a.masteryAfter >= a.masteryBefore ? "text-ink" : "text-redpen")}>
               {pct(a.masteryBefore)} → {pct(a.masteryAfter)}
             </span>

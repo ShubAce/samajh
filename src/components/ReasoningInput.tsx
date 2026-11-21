@@ -32,6 +32,7 @@ export function ReasoningInput({
   const chunks = useRef<Blob[]>([]);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLTextAreaElement>(null);
   const secRef = useRef(0);
 
   useEffect(() => () => {
@@ -44,6 +45,20 @@ export function ReasoningInput({
       setText("");
       setSeconds(0);
     }
+  }, [value]);
+
+  // Text set from outside (the demo shortcut types into this box): show it on the Type tab,
+  // and keep the newest words in view while it is being typed.
+  useEffect(() => {
+    if (value?.mode === "text" && value.text !== text) {
+      setText(value.text);
+      setTab("text");
+      requestAnimationFrame(() => {
+        const el = textRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   async function startRec() {
@@ -121,6 +136,8 @@ export function ReasoningInput({
               type="button"
               role="tab"
               aria-selected={tab === t.id}
+              aria-label={t.label}
+              title={t.label}
               disabled={disabled}
               onClick={() => setTab(t.id)}
               className={cn(
@@ -138,6 +155,8 @@ export function ReasoningInput({
       <div className="mt-3">
         {tab === "text" && (
           <textarea
+            ref={textRef}
+            aria-label="Explain your thinking"
             value={text}
             disabled={disabled}
             onChange={(e) => {
@@ -146,7 +165,7 @@ export function ReasoningInput({
             }}
             rows={3}
             placeholder="e.g. I think the first bulb uses up some current, so… (English, Hindi or Hinglish)"
-            className="hand w-full resize-y rounded-[10px] border border-navy/15 bg-surface px-3 py-2 text-[18px] leading-relaxed text-ink placeholder:text-faint/80 focus:border-ink/50 focus:outline-none"
+            className="hand field-sizing-content max-h-65 min-h-26.5 w-full resize-y rounded-[10px] border border-navy/15 bg-surface px-3 py-2 text-[18px] leading-relaxed text-ink placeholder:text-faint/80 focus:border-ink/50 focus:outline-none"
           />
         )}
 

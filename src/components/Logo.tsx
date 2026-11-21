@@ -10,7 +10,7 @@ export function Logo({ className, href = "/" }: { className?: string; href?: str
       </span>
       <span className="flex items-baseline gap-1.5">
         <span className="display text-[20px] font-extrabold tracking-tight text-navy">Samajh</span>
-        <span className="deva text-[14px] font-semibold text-slate">समझ</span>
+        <span className="deva hidden text-[14px] font-semibold text-slate sm:inline">समझ</span>
       </span>
     </Link>
   );

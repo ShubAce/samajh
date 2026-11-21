@@ -1,14 +1,15 @@
 "use client";
 
 import { ArrowRight } from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ConceptMap } from "@/components/ConceptMap";
 import { InkBar, InkWell } from "@/components/Ink";
 import { MarginNote } from "@/components/RedPen";
 import { QuestionSheet } from "@/components/QuestionSheet";
-import { Button, ButtonLink, Sheet } from "@/components/ui";
+import { Button, ButtonLink, Sheet, Spinner } from "@/components/ui";
 import { CHAPTERS, CONCEPT_BY_ID, CONCEPTS } from "@/lib/curriculum/concepts";
 import { MISCONCEPTION_BY_ID } from "@/lib/curriculum/misconceptions";
 import { BKT } from "@/lib/engine/learner";
@@ -37,16 +38,27 @@ function Diagnostic() {
   const student = useSamajh((s) => s.student);
   const diagnostic = useSamajh((s) => s.diagnostic);
   const [showResults, setShowResults] = useState(false);
+  // set while "Explore as Aarav" navigates to /learn, so the demo student's Intro doesn't flash here meanwhile
+  const [openingDemo, setOpeningDemo] = useState(false);
 
-  if (!student) return <NameStep />;
+  if (openingDemo) {
+    return (
+      <Sheet className="mx-auto mt-8 flex max-w-lg items-center gap-3 p-7 text-[16px] font-semibold text-navy" aria-live="polite">
+        <Spinner className="size-5 text-ink" /> Opening Aarav&rsquo;s map…
+      </Sheet>
+    );
+  }
+  if (!student) return <NameStep onDemo={() => setOpeningDemo(true)} />;
   if (showResults) return <Results />;
   if (diagnostic.status !== "running") return <Intro done={diagnostic.status === "done"} />;
   return <Runner onFinish={() => setShowResults(true)} />;
 }
 
-function NameStep() {
+function NameStep({ onDemo }: { onDemo: () => void }) {
   const start = useSamajh((s) => s.start);
   const startDiagnostic = useSamajh((s) => s.startDiagnostic);
+  const loadDemo = useSamajh((s) => s.loadDemo);
+  const router = useRouter();
   const [name, setName] = useState("");
   return (
     <Sheet className="mx-auto mt-8 max-w-lg p-7 sm:p-9">
@@ -80,6 +92,20 @@ function NameStep() {
         </Button>
         <p className="text-[13px] text-slate">Your progress stays in this browser. No sign-up needed.</p>
       </form>
+      <p className="mt-5 border-t border-dashed border-navy/15 pt-4 text-[13.5px] text-slate">
+        In a hurry?{" "}
+        <button
+          type="button"
+          className="text-left font-bold text-ink hover:underline"
+          onClick={() => {
+            onDemo();
+            loadDemo();
+            router.push("/learn");
+          }}
+        >
+          Explore as Aarav, a demo student three weeks in
+        </button>
+      </p>
     </Sheet>
   );
 }
@@ -121,6 +147,9 @@ function Runner({ onFinish }: { onFinish: () => void }) {
   const [current, setCurrent] = useState<Pick | null>(null);
   const [pulse, setPulse] = useState<string[]>([]);
   const [lastAttempt, setLastAttempt] = useState<Attempt | null>(null);
+  const reduce = useReducedMotion();
+  // the question we've already advanced from, so a double-click on "Next" can't skip one
+  const advancedFrom = useRef<string | null>(null);
 
   const computeNext = () => {
     const s = useSamajh.getState();
@@ -157,35 +186,52 @@ function Runner({ onFinish }: { onFinish: () => void }) {
           </p>
           <div className="flex flex-1 gap-1" aria-hidden>
             {Array.from({ length: DIAGNOSTIC_LENGTH }).map((_, i) => (
-              <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < asked ? "var(--color-ink)" : "rgba(0,0,0,.1)" }} />
+              <span
+                key={i}
+                className="h-1.5 flex-1 rounded-full transition-[background-color] duration-500"
+                style={{ background: i < asked ? "var(--color-ink)" : "rgba(0,0,0,.1)" }}
+              />
             ))}
           </div>
         </div>
-        <QuestionSheet
-          question={current.question}
-          why={current.why}
-          predicted={current.predicted}
-          mode="diagnostic"
-          number={index}
-          nextLabel={asked >= DIAGNOSTIC_LENGTH ? "See my map" : "Next question"}
-          onAnswered={(a) => {
-            setLastAttempt(a);
-            setPulse([a.conceptId, ...(a.propagated ?? []).map((p) => p.conceptId)]);
-          }}
-          onNext={() => {
-            const next = computeNext();
-            setPulse([]);
-            if (!next) {
-              finishDiagnostic();
-              onFinish();
-            } else setCurrent(next);
-          }}
-        />
+        {/* keyed: every new question lands with a short rise (backwards fill leaves no transform behind) */}
+        <div key={current.question.id} style={{ animation: "rise 380ms cubic-bezier(.2,.8,.2,1) backwards" }}>
+          <QuestionSheet
+            question={current.question}
+            why={current.why}
+            predicted={current.predicted}
+            mode="diagnostic"
+            number={index}
+            nextLabel={asked >= DIAGNOSTIC_LENGTH ? "See my map" : "Next question"}
+            onAnswered={(a) => {
+              setLastAttempt(a);
+              // the ripple (and its caption) covers only the concepts that visibly moved
+              const moved = (a.propagated ?? []).filter((p) => Math.round(p.from * 100) !== Math.round(p.to * 100));
+              setPulse([a.conceptId, ...moved.map((p) => p.conceptId)]);
+            }}
+            onNext={() => {
+              if (advancedFrom.current === current.question.id) return;
+              advancedFrom.current = current.question.id;
+              const next = computeNext();
+              setPulse([]);
+              window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+              if (!next) {
+                finishDiagnostic();
+                onFinish();
+              } else setCurrent(next);
+            }}
+          />
+        </div>
       </div>
-      <aside className="grid content-start gap-4 lg:sticky lg:top-20">
+      <aside className="grid content-start gap-4 self-start lg:sticky lg:top-20">
         <Sheet className="graph-paper overflow-hidden p-4">
           <p className="mb-2 text-[14px] font-semibold text-navy">Your map, filling in live</p>
           <ConceptMap states={states} misconceptions={misconceptions} compact focus={current.conceptId} pulse={pulse} />
+          {pulse.length > 1 && (
+            <p key={pulse.join()} className="hand mt-1 text-[17px] leading-snug text-ink" style={{ animation: "write 600ms ease-out backwards" }}>
+              This answer also updated {pulse.length - 1} linked concept{pulse.length - 1 === 1 ? "" : "s"}
+            </p>
+          )}
           <p className="mt-2 text-[12.5px] leading-snug text-slate">
             Solid ink means checked directly. Pale ink is estimated from linked concepts. Highlighted is the concept being tested now.
           </p>

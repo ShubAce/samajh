@@ -161,6 +161,15 @@
     transform: rotate(1deg);
   }
 }
+/* the red-pen underline: each line's stroke grows in from the left (see RedPenUnderline) */
+@keyframes pen-underline {
+  from {
+    background-size: 0% 8px;
+  }
+  to {
+    background-size: 100% 8px;
+  }
+}
 @keyframes glow-bulb {
   0%,
   100% {
@@ -179,6 +188,11 @@ html,
 body {
   background: var(--color-paper);
   color: var(--color-navy);
+}
+
+/* short pages keep the scrollbar's space, so the centred header doesn't jump sideways between pages */
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -295,7 +309,9 @@ body {
   *::before,
   *::after {
     animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
+    transition-delay: 0ms !important;
   }
 }

@@ -1,7 +1,10 @@
 "use client";
 
+import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+
+const EASE_OUT = [0.2, 0.8, 0.2, 1] as const;
 
 /** Fades and lifts its children in the first time they scroll into view. */
 export function Reveal({
@@ -39,7 +42,7 @@ export function Reveal({
   return (
     <As
       ref={ref as never}
-      className={cn("transition-[opacity,transform] duration-700 ease-[cubic-bezier(.2,.8,.2,1)]", shown ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0", className)}
+      className={cn("transition-[opacity,transform,translate] duration-700 ease-[cubic-bezier(.2,.8,.2,1)]", shown ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0", className)}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
@@ -79,6 +82,64 @@ export function CountUp({ to, duration = 1200, className }: { to: number; durati
   return (
     <span ref={ref} className={cn("tabular", className)}>
       {v}
+    </span>
+  );
+}
+
+/**
+ * Tweens a 0–1 value from `from` to `to` and shows it as a percentage, e.g. 53% → 22%.
+ * Screen readers get the final value once; reduced motion shows it at once.
+ */
+export function TweenNumber({
+  from,
+  to,
+  delay = 0,
+  duration = 0.9,
+  className,
+}: {
+  from: number;
+  to: number;
+  /** seconds */
+  delay?: number;
+  /** seconds */
+  duration?: number;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+  const [v, setV] = useState(reduce ? to : from);
+  useEffect(() => {
+    if (reduce) {
+      setV(to);
+      return;
+    }
+    const c = animate(from, to, { delay, duration, ease: EASE_OUT, onUpdate: setV });
+    return () => c.stop();
+  }, [from, to, delay, duration, reduce]);
+  return (
+    <span className={cn("tabular", className)}>
+      <span aria-hidden>{Math.round(v * 100)}%</span>
+      <span className="sr-only">{Math.round(to * 100)}%</span>
+    </span>
+  );
+}
+
+/** A stopwatch pill counting up in 0.1 s steps from when it mounts (decorative: hidden from screen readers). */
+export function Elapsed({ className }: { className?: string }) {
+  const [start] = useState(() => performance.now());
+  const [ms, setMs] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setMs(performance.now() - start), 100);
+    return () => clearInterval(t);
+  }, [start]);
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "tabular inline-flex h-6 shrink-0 items-center rounded-full border-[1.5px] border-line bg-white px-2 text-[12px] font-extrabold text-navy",
+        className,
+      )}
+    >
+      {(ms / 1000).toFixed(1)} s
     </span>
   );
 }

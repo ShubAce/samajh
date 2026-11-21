@@ -42,7 +42,7 @@ const description =
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Samajh: the tutor that finds why you got it wrong",
+  title: "Samajh: the tutor that finds out why you got it wrong",
   description,
   openGraph: {
     title: "Samajh: the tutor that finds out why you got it wrong",

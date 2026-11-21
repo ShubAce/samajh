@@ -24,7 +24,7 @@ Your job is to analyse HOW the student reasoned — not just whether the final a
 
 Rules:
 - Base every judgement on the student's own words, speech or handwriting. Put an exact quote of the decisive part in evidenceQuote.
-- Students may write or speak in English, Hindi or Hinglish. Understand all three. Decide the language ONLY from the student's own words and put it in "language". Reply in that same language: English reasoning gets simple English; Hindi or Hinglish reasoning gets natural Hinglish in Roman script, the way an Indian teacher would talk. Keep physics terms (current, resistance, series) in English.
+- Students may write or speak in English, Hindi or Hinglish. Understand all three. Decide the language ONLY from the student's own words and put it in "language". Reply in that same language: English reasoning gets simple English; Hinglish reasoning gets natural Hinglish in Roman script, the way an Indian teacher would talk; reasoning written in Devanagari gets simple Hindi in Devanagari script. Keep physics terms (current, resistance, series) in English.
 - Prefer the curated misconception list. Only fill novelMisconception when the reasoning shows a clear, specific faulty mental model that none of the listed ones describes.
 - A correct final answer can still hide a misconception. If the reasoning is physically wrong, the verdict is "misconception" even though the answer is correct.
 - Verdicts: "sound" = correct physics reasoning; "misconception" = a faulty mental model; "slip" = right method but an arithmetic, unit or reading mistake; "incomplete" = partly right but missing a key idea; "guess" = no real physics reasoning.
@@ -78,7 +78,9 @@ const HINDI_FUNCTION_WORDS = new Set(
 /** deterministic language hint for typed reasoning */
 function typedLanguage(text?: string): "English" | "Hindi" | "Hinglish" | null {
   if (!text?.trim()) return null;
-  if (/[ऀ-ॿ]/.test(text)) return "Hindi";
+  // mostly Devanagari letters is Hindi, even with English physics words ("ammeter") mixed in
+  const deva = (text.match(/[ऀ-ॿ]/g) ?? []).length;
+  if (deva > 0) return deva >= (text.match(/[a-z]/gi) ?? []).length ? "Hindi" : "Hinglish";
   const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
   const hits = words.filter((w) => HINDI_FUNCTION_WORDS.has(w)).length;
   return hits >= 2 && hits / Math.max(1, words.length) > 0.12 ? "Hinglish" : "English";
@@ -126,6 +128,7 @@ export async function POST(req: Request) {
   }
 
   const chosenText = question.options.find((o) => o.id === chosen)?.text ?? "";
+  const typedLang = media ? null : typedLanguage(reasoningText);
   const brief = [
     `Concept: ${concept?.title ?? question.conceptId} — ${concept?.summary ?? ""}`,
     describeQuestion(question),
@@ -141,8 +144,14 @@ export async function POST(req: Request) {
       : media?.kind === "image"
         ? "The student's reasoning is the handwritten working in the attached photo. Transcribe the relevant lines into transcript first, then analyse them step by step."
         : `Student's reasoning (typed): """${reasoningText}"""`,
-    typedLanguage(reasoningText)
-      ? `The student wrote in ${typedLanguage(reasoningText)}. Write feedback and hint in ${typedLanguage(reasoningText) === "English" ? "simple English" : "natural Hinglish (Roman script)"}.`
+    typedLang
+      ? `The student wrote in ${typedLang}. Write feedback and hint in ${
+          typedLang === "English"
+            ? "simple English"
+            : typedLang === "Hindi"
+              ? "simple Hindi in Devanagari script (keep physics terms such as current, resistance and ammeter in English)"
+              : "natural Hinglish (Roman script)"
+        }.`
       : "",
   ].join("\n");
 
@@ -175,7 +184,9 @@ export async function POST(req: Request) {
       confidence: Math.max(0, Math.min(1, Number(data.confidence) || 0.6)),
       feedback: data.feedback ?? "",
       hint: data.hint ?? "",
-      language: data.language ?? "English",
+      // typed Devanagari is Hindi; typed Roman-script Hindi is Hinglish, whatever label the model chose
+      language:
+        typedLang === "Hindi" ? "Hindi" : typedLang === "Hinglish" && data.language === "Hindi" ? "Hinglish" : (data.language ?? "English"),
       engine: "gemini",
     };
     if (analysis.verdict === "misconception" && !analysis.misconceptionIds.length && !analysis.novelMisconception) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CHAPTERS, CHAPTER_BY_ID, CONCEPTS, CONCEPT_BY_ID, ancestorsOf, depthOf } from "@/lib/curriculum/concepts";
+import { CHAPTERS, CHAPTER_BY_ID, CONCEPTS, CONCEPT_BY_ID, ancestorsOf, depthOf, descendantsOf } from "@/lib/curriculum/concepts";
 import { BKT } from "@/lib/engine/learner";
 import { useMisconceptionDef } from "@/lib/store";
 import type { ConceptState, StudentMisconception } from "@/lib/types";
@@ -110,6 +110,10 @@ export function ConceptMap({
   }, [misconceptions, states, lookup]);
 
   const pulseSet = useMemo(() => new Set(pulse), [pulse]);
+  // ripple: pulse[0] is the answered concept; the rest moved through the prerequisite graph
+  const src = pulse[0] ?? null;
+  const srcAnc = useMemo(() => (src ? ancestorsOf(src) : new Map<string, number>()), [src]);
+  const srcDesc = useMemo(() => (src ? descendantsOf(src) : new Map<string, number>()), [src]);
 
   return (
     <div className={cn("relative", className)}>
@@ -162,26 +166,36 @@ export function ConceptMap({
             const x2 = b.x - L.r;
             const dx = Math.max(16, (x2 - x1) / 2);
             const d = `M${x1},${a.y} C${x1 + dx},${a.y} ${x2 - dx},${b.y} ${x2},${b.y}`;
-            const onChain = active && (c.id === active || chain.has(c.id)) && (chain.has(p) || p === active);
+            const onChain = !!active && (c.id === active || chain.has(c.id)) && (chain.has(p) || p === active);
+            // an answer's ripple: back along its prerequisites (up) and forward to its dependents (down)
+            const up = pulseSet.has(p) && srcAnc.has(p) && (c.id === src || (srcAnc.has(c.id) && pulseSet.has(c.id)));
+            const down = pulseSet.has(c.id) && srcDesc.has(c.id) && (p === src || (srcDesc.has(p) && pulseSet.has(p)));
+            const ripple = !onChain && (up || down);
+            const lit = onChain || ripple;
             return (
               <g key={`${p}->${c.id}`}>
                 <path
                   d={d}
                   fill="none"
-                  stroke={onChain ? "#3355ff" : LINE}
-                  strokeOpacity={onChain ? 1 : 0.17}
-                  strokeWidth={onChain ? (compact ? 1.8 : 3) : compact ? 0.9 : 1.3}
+                  stroke={lit ? "#3355ff" : LINE}
+                  strokeOpacity={lit ? 1 : 0.17}
+                  strokeWidth={onChain ? (compact ? 1.8 : 3) : ripple ? (compact ? 1.6 : 2.6) : compact ? 0.9 : 1.3}
                   style={{ transition: "stroke-opacity 200ms" }}
                 />
-                {onChain && (
+                {lit && (
+                  // dash period 11 divides current-flow's -44 offset, so the loop is seamless
                   <path
                     d={d}
                     fill="none"
                     stroke="#ffd23f"
                     strokeWidth={compact ? 2 : 3.5}
                     strokeLinecap="round"
-                    strokeDasharray="0.1 14"
-                    style={{ animation: "current-flow 1.1s linear infinite" }}
+                    strokeDasharray="0.1 10.9"
+                    style={{
+                      animation: onChain
+                        ? "current-flow 1.1s linear infinite"
+                        : `current-flow 0.9s linear infinite ${up ? "reverse" : "normal"}`,
+                    }}
                   />
                 )}
               </g>
@@ -205,8 +219,10 @@ export function ConceptMap({
           const r = L.r;
           const color = CHAPTER_BY_ID[c.chapter].color;
           const delay = 60 + depthOf(c.id, depthMemo) * 110 + (y % 7) * 12;
+          // graph distance from the answered concept: the ripple reaches nearer concepts first
+          const dist = c.id === src ? 0 : (srcAnc.get(c.id) ?? srcDesc.get(c.id) ?? 1);
           return (
-            <g key={c.id} transform={`translate(${x},${y})`}>
+            <g key={c.id} data-concept={c.id} transform={`translate(${x},${y})`}>
               <g
                 className={cn(onSelect && "cursor-pointer outline-none")}
                 tabIndex={onSelect ? 0 : -1}
@@ -242,7 +258,7 @@ export function ConceptMap({
                     fill="none"
                     stroke="#3355ff"
                     strokeWidth={2.5}
-                    style={{ transformBox: "fill-box", transformOrigin: "center", animation: "ping-once 1000ms ease-out 1" }}
+                    style={{ transformBox: "fill-box", transformOrigin: "center", animation: `ping-once 900ms ease-out ${dist * 140}ms 1 backwards` }}
                   />
                 )}
                 {checked && !compact && <circle cx={2.5} cy={2.5} r={r} fill={LINE} />}
@@ -267,12 +283,21 @@ export function ConceptMap({
                       transformBox: "fill-box",
                       transformOrigin: "bottom",
                       transform: `scaleY(${Math.max(0.04, p)})`,
-                      transition: "transform 800ms cubic-bezier(.2,.8,.2,1)",
+                      transition: `transform 800ms cubic-bezier(.2,.8,.2,1) ${pulseSet.has(c.id) ? dist * 140 : 0}ms`,
                     }}
                   />
                 )}
                 {!compact && (
-                  <text x={r + 11} y={5} fill={checked ? LINE : "#8b8e9f"} style={{ fontSize: 14.5, fontWeight: checked ? 750 : 550 }}>
+                  // a paper-coloured halo (painted under the fill) lets traced edges pass behind the label, not through it
+                  <text
+                    x={r + 11}
+                    y={5}
+                    fill={checked ? LINE : "#8b8e9f"}
+                    stroke={isSel ? "#ffd23f" : "#ffffff"}
+                    strokeWidth={5}
+                    strokeLinejoin="round"
+                    style={{ fontSize: 14.5, fontWeight: checked ? 750 : 550, paintOrder: "stroke" }}
+                  >
                     {label}
                   </text>
                 )}
@@ -299,6 +324,14 @@ export function ConceptMap({
 
       {showLegend && (
         <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[12.5px] font-semibold text-slate">
+          {focus && !compact && (
+            <span className="inline-flex items-center gap-2">
+              <svg width="16" height="16" aria-hidden>
+                <circle cx="8" cy="8" r="6.5" fill="#ffd23f" stroke={LINE} strokeWidth="1.5" />
+              </svg>
+              Your next step
+            </span>
+          )}
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
               <circle cx="8" cy="8" r="6.5" fill="#fff" stroke={LINE} strokeOpacity=".4" strokeWidth="1.5" strokeDasharray="2 2" />
