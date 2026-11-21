@@ -4,10 +4,10 @@ import type { Chapter, Concept } from "../types";
 // Light – Reflection & Refraction · Human Eye & Colourful World · Electricity · Magnetic Effects of Current
 
 export const CHAPTERS: Chapter[] = [
-  { id: "light", title: "Light – Reflection & Refraction", short: "Light", color: "#2F5BD3" },
-  { id: "eye", title: "The Human Eye & the Colourful World", short: "Human Eye", color: "#7C4DDB" },
-  { id: "electricity", title: "Electricity", short: "Electricity", color: "#D9822B" },
-  { id: "magnetism", title: "Magnetic Effects of Electric Current", short: "Magnetism", color: "#0E9384" },
+  { id: "light", title: "Light – Reflection & Refraction", short: "Light", color: "#FFD23F" },
+  { id: "eye", title: "The Human Eye & the Colourful World", short: "Human Eye", color: "#B9A2FF" },
+  { id: "electricity", title: "Electricity", short: "Electricity", color: "#3355FF" },
+  { id: "magnetism", title: "Magnetic Effects of Electric Current", short: "Magnetism", color: "#FF8A3D" },
 ];
 
 export const CONCEPTS: Concept[] = [

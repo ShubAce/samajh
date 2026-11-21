@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Anek_Devanagari, Kalam, Plus_Jakarta_Sans, Sora } from "next/font/google";
+import { Anek_Devanagari, Bricolage_Grotesque, Figtree, Kalam } from "next/font/google";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
+const figtree = Figtree({
   subsets: ["latin"],
-  variable: "--font-jakarta",
+  variable: "--font-figtree",
   display: "swap",
 });
 
-const sora = Sora({
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
-  variable: "--font-sora",
+  axes: ["opsz", "wdth"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -53,13 +54,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070a17",
-  colorScheme: "dark",
+  themeColor: "#f3f4f7",
+  colorScheme: "light",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jakarta.variable} ${sora.variable} ${anekDeva.variable} ${kalam.variable}`}>
+    <html lang="en" className={`${figtree.variable} ${bricolage.variable} ${anekDeva.variable} ${kalam.variable}`}>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

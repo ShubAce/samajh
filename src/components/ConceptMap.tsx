@@ -1,11 +1,13 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
-import { CHAPTERS, CONCEPTS, CONCEPT_BY_ID, ancestorsOf, depthOf } from "@/lib/curriculum/concepts";
+import { useMemo, useState } from "react";
+import { CHAPTERS, CHAPTER_BY_ID, CONCEPTS, CONCEPT_BY_ID, ancestorsOf, depthOf } from "@/lib/curriculum/concepts";
 import { BKT } from "@/lib/engine/learner";
 import { useMisconceptionDef } from "@/lib/store";
 import type { ConceptState, StudentMisconception } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+const LINE = "#17171c";
 
 interface Layout {
   pos: Record<string, { x: number; y: number }>;
@@ -18,10 +20,10 @@ interface Layout {
 function computeLayout(compact: boolean): Layout {
   const COL_W = compact ? 54 : 168;
   const ROW_H = compact ? 21 : 46;
-  const LANE_GAP = compact ? 18 : 36;
+  const LANE_GAP = compact ? 20 : 44;
   const LEFT = compact ? 16 : 26;
-  const TOP = compact ? 22 : 42;
-  const r = compact ? 6.5 : 11.5;
+  const TOP = compact ? 24 : 50;
+  const r = compact ? 6.5 : 12;
   const memo: Record<string, number> = {};
   const pos: Layout["pos"] = {};
   const lanes: Layout["lanes"] = [];
@@ -66,6 +68,7 @@ function computeLayout(compact: boolean): Layout {
 
 const LAYOUTS: Partial<Record<"full" | "compact", Layout>> = {};
 const layoutFor = (compact: boolean) => (LAYOUTS[compact ? "compact" : "full"] ??= computeLayout(compact));
+const depthMemo: Record<string, number> = {};
 
 export function ConceptMap({
   states,
@@ -89,7 +92,6 @@ export function ConceptMap({
   showLegend?: boolean;
 }) {
   const L = layoutFor(compact);
-  const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<string | null>(null);
   const active = hover ?? selected ?? null;
   const chain = useMemo(() => (active ? ancestorsOf(active) : new Map<string, number>()), [active]);
@@ -108,8 +110,6 @@ export function ConceptMap({
   }, [misconceptions, states, lookup]);
 
   const pulseSet = useMemo(() => new Set(pulse), [pulse]);
-  const glow = `glow${uid}`;
-  const glowRed = `glowr${uid}`;
 
   return (
     <div className={cn("relative", className)}>
@@ -119,59 +119,38 @@ export function ConceptMap({
         role="img"
         aria-label="Concept map of Class 10 Physics with your mastery of each concept"
       >
-        <defs>
-          <linearGradient id={`fill${uid}`} x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0" stopColor="#5b4cff" />
-            <stop offset="1" stopColor="#46d3ff" />
-          </linearGradient>
-          <linearGradient id={`edge${uid}`} x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#7d6bff" />
-            <stop offset="1" stopColor="#46d3ff" />
-          </linearGradient>
-          <radialGradient id={`halo${uid}`}>
-            <stop offset="0" stopColor="#7d8cff" stopOpacity=".75" />
-            <stop offset="1" stopColor="#7d8cff" stopOpacity="0" />
-          </radialGradient>
-          <filter id={glow} x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation={compact ? 1.4 : 2.4} result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <filter id={glowRed} x="-20%" y="-60%" width="140%" height="220%">
-            <feGaussianBlur stdDeviation={compact ? 1 : 1.8} result="b" />
-            <feMerge>
-              <feMergeNode in="b" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        {/* lanes */}
-        {L.lanes.map((lane, i) => (
-          <g key={lane.id}>
-            {i > 0 && (
-              <line
-                x1={0}
-                x2={L.width}
-                y1={lane.top - (compact ? 10 : 19)}
-                y2={lane.top - (compact ? 10 : 19)}
-                stroke="#ffffff"
-                strokeOpacity={0.06}
-                strokeDasharray="3 6"
-              />
-            )}
-            <text
-              x={compact ? 2 : 4}
-              y={lane.top - (compact ? 6 : 14)}
-              fill="#8d95bd"
-              style={{ fontSize: compact ? 8.5 : 12.5, fontWeight: 700, letterSpacing: ".02em" }}
-            >
-              {lane.label}
-            </text>
-          </g>
-        ))}
+        {/* lanes: coloured chapter tags */}
+        {L.lanes.map((lane, i) => {
+          const ch = CHAPTER_BY_ID[lane.id as keyof typeof CHAPTER_BY_ID];
+          const tagW = compact ? lane.label.length * 5.2 + 10 : lane.label.length * 8 + 22;
+          const tagH = compact ? 12 : 22;
+          const ty = lane.top - (compact ? 19 : 38);
+          return (
+            <g key={lane.id}>
+              {i > 0 && (
+                <line
+                  x1={0}
+                  x2={L.width}
+                  y1={lane.top - (compact ? 22 : 44) + (compact ? 1 : 2)}
+                  y2={lane.top - (compact ? 22 : 44) + (compact ? 1 : 2)}
+                  stroke={LINE}
+                  strokeOpacity={0.12}
+                  strokeDasharray="2 6"
+                />
+              )}
+              <rect x={compact ? 2 : 4} y={ty} width={tagW} height={tagH} rx={tagH / 2} fill={ch.color} stroke={LINE} strokeWidth={compact ? 1.2 : 2} />
+              <text
+                x={(compact ? 2 : 4) + tagW / 2}
+                y={ty + tagH / 2 + (compact ? 3 : 5)}
+                textAnchor="middle"
+                fill={lane.id === "electricity" ? "#ffffff" : LINE}
+                style={{ fontSize: compact ? 8 : 13, fontWeight: 800 }}
+              >
+                {lane.label}
+              </text>
+            </g>
+          );
+        })}
 
         {/* edges */}
         {CONCEPTS.flatMap((c) =>
@@ -182,18 +161,30 @@ export function ConceptMap({
             const x1 = a.x + L.r;
             const x2 = b.x - L.r;
             const dx = Math.max(16, (x2 - x1) / 2);
+            const d = `M${x1},${a.y} C${x1 + dx},${a.y} ${x2 - dx},${b.y} ${x2},${b.y}`;
             const onChain = active && (c.id === active || chain.has(c.id)) && (chain.has(p) || p === active);
             return (
-              <path
-                key={`${p}->${c.id}`}
-                d={`M${x1},${a.y} C${x1 + dx},${a.y} ${x2 - dx},${b.y} ${x2},${b.y}`}
-                fill="none"
-                stroke={onChain ? `url(#edge${uid})` : "#aab4ff"}
-                strokeOpacity={onChain ? 1 : 0.13}
-                strokeWidth={onChain ? (compact ? 1.5 : 2.2) : compact ? 0.8 : 1.1}
-                filter={onChain ? `url(#${glow})` : undefined}
-                style={{ transition: "stroke-opacity 200ms" }}
-              />
+              <g key={`${p}->${c.id}`}>
+                <path
+                  d={d}
+                  fill="none"
+                  stroke={onChain ? "#3355ff" : LINE}
+                  strokeOpacity={onChain ? 1 : 0.17}
+                  strokeWidth={onChain ? (compact ? 1.8 : 3) : compact ? 0.9 : 1.3}
+                  style={{ transition: "stroke-opacity 200ms" }}
+                />
+                {onChain && (
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke="#ffd23f"
+                    strokeWidth={compact ? 2 : 3.5}
+                    strokeLinecap="round"
+                    strokeDasharray="0.1 14"
+                    style={{ animation: "current-flow 1.1s linear infinite" }}
+                  />
+                )}
+              </g>
             );
           }),
         )}
@@ -210,144 +201,136 @@ export function ConceptMap({
           const isFocus = focus === c.id;
           const isFlag = flagged.has(c.id);
           const label = c.short;
-          const labelW = label.length * (compact ? 0 : 7.6);
+          const labelW = label.length * (compact ? 0 : 7.7);
           const r = L.r;
-          const bright = checked ? p : estimated ? p * 0.45 : 0;
+          const color = CHAPTER_BY_ID[c.chapter].color;
+          const delay = 60 + depthOf(c.id, depthMemo) * 110 + (y % 7) * 12;
           return (
-            <g
-              key={c.id}
-              transform={`translate(${x},${y})`}
-              className={cn(onSelect && "cursor-pointer outline-none")}
-              tabIndex={onSelect ? 0 : -1}
-              role={onSelect ? "button" : undefined}
-              aria-label={`${c.title}: ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}%` : "not checked yet"}${isFlag ? ", misconception detected" : ""}`}
-              onClick={() => onSelect?.(c.id)}
-              onKeyDown={(e) => {
-                if (onSelect && (e.key === "Enter" || e.key === " ")) {
-                  e.preventDefault();
-                  onSelect(c.id);
-                }
-              }}
-              onMouseEnter={() => setHover(c.id)}
-              onMouseLeave={() => setHover(null)}
-            >
-              <title>{`${c.title}: ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}% (not asked directly)` : "not checked yet"}`}</title>
-              {/* star halo grows with mastery */}
-              {bright > 0.35 && <circle r={r * (1.6 + bright * 1.1)} fill={`url(#halo${uid})`} opacity={bright * 0.85} />}
-              {!compact && isSel && (
-                <rect
-                  x={r + 3}
-                  y={-13}
-                  width={labelW + 14}
-                  height={26}
-                  rx={8}
-                  fill="rgba(255,194,75,.14)"
-                  stroke="rgba(255,194,75,.55)"
-                />
-              )}
-              {isFocus && (
-                <circle
-                  r={r + (compact ? 4 : 6)}
-                  fill="none"
-                  stroke="#ffc24b"
-                  strokeWidth={compact ? 1.6 : 2.2}
-                  filter={`url(#${glow})`}
-                  style={{ animation: "pulse-ring 1.6s ease-in-out infinite" }}
-                />
-              )}
-              {pulseSet.has(c.id) && (
+            <g key={c.id} transform={`translate(${x},${y})`}>
+              <g
+                className={cn(onSelect && "cursor-pointer outline-none")}
+                tabIndex={onSelect ? 0 : -1}
+                role={onSelect ? "button" : undefined}
+                aria-label={`${c.title}: ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}%` : "not checked yet"}${isFlag ? ", misconception detected" : ""}`}
+                onClick={() => onSelect?.(c.id)}
+                onKeyDown={(e) => {
+                  if (onSelect && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    onSelect(c.id);
+                  }
+                }}
+                onMouseEnter={() => setHover(c.id)}
+                onMouseLeave={() => setHover(null)}
+                style={{ transformBox: "fill-box", transformOrigin: "center", animation: `node-in 420ms cubic-bezier(.2,.9,.3,1.3) ${delay}ms both` }}
+              >
+                <title>{`${c.title}: ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}% (not asked directly)` : "not checked yet"}`}</title>
+                {!compact && isSel && (
+                  <rect x={r + 4} y={-14} width={labelW + 16} height={28} rx={8} fill="#ffd23f" stroke={LINE} strokeWidth={2} />
+                )}
+                {isFocus && (
+                  <circle
+                    r={r + (compact ? 4 : 6)}
+                    fill="#ffd23f"
+                    stroke={LINE}
+                    strokeWidth={compact ? 1.2 : 2}
+                    style={{ animation: "pulse-ring 1.4s ease-in-out infinite" }}
+                  />
+                )}
+                {pulseSet.has(c.id) && (
+                  <circle
+                    r={r}
+                    fill="none"
+                    stroke="#3355ff"
+                    strokeWidth={2.5}
+                    style={{ transformBox: "fill-box", transformOrigin: "center", animation: "ping-once 1000ms ease-out 1" }}
+                  />
+                )}
+                {checked && !compact && <circle cx={2.5} cy={2.5} r={r} fill={LINE} />}
                 <circle
                   r={r}
-                  fill="none"
-                  stroke="#46d3ff"
-                  strokeWidth={2}
-                  style={{ transformBox: "fill-box", transformOrigin: "center", animation: "ping-once 1100ms ease-out 1" }}
+                  fill="#ffffff"
+                  stroke={LINE}
+                  strokeOpacity={unseen ? 0.4 : 1}
+                  strokeWidth={compact ? 1.2 : 2}
+                  strokeDasharray={unseen || estimated ? (compact ? "2 2" : "3.5 3") : undefined}
                 />
-              )}
-              <circle
-                r={r}
-                fill="#111733"
-                stroke={unseen ? "#8d95bd" : "#a59cff"}
-                strokeOpacity={unseen ? 0.4 : 0.9}
-                strokeWidth={compact ? 1.1 : 1.5}
-                strokeDasharray={unseen || estimated ? (compact ? "2 2" : "3 3") : undefined}
-              />
-              {!unseen && (
-                <rect
-                  x={-r + 2}
-                  y={-r + 2}
-                  width={2 * r - 4}
-                  height={2 * r - 4}
-                  rx={r}
-                  fill={`url(#fill${uid})`}
-                  opacity={estimated ? 0.42 : 1}
-                  filter={checked && p > 0.7 ? `url(#${glow})` : undefined}
-                  style={{
-                    transformBox: "fill-box",
-                    transformOrigin: "bottom",
-                    transform: `scaleY(${Math.max(0.04, p)})`,
-                    transition: "transform 800ms cubic-bezier(.2,.8,.2,1)",
-                  }}
-                />
-              )}
-              {!compact && (
-                <text
-                  x={r + 10}
-                  y={5}
-                  fill={isSel ? "#ffd27a" : checked ? "#e9ecff" : "#8d95bd"}
-                  style={{ fontSize: 14.5, fontWeight: checked ? 650 : 500 }}
-                >
-                  {label}
-                </text>
-              )}
-              {isFlag && (
-                <path
-                  d={
-                    compact
-                      ? `M${-r - 3},${r + 1} C${-r - 6},${-r - 4} ${r + 6},${-r - 6} ${r + 4},${0} C${r + 2},${r + 6} ${-r - 2},${r + 6} ${-r - 4},${-2}`
-                      : `M${-r - 4},${6} C${-r - 10},${-17} ${r + labelW * 0.6},${-20} ${r + labelW + 20},${-8} C${r + labelW + 30},${4} ${r + labelW},${18} ${r + 30},${18} C${-r},${19} ${-r - 12},${10} ${-r - 6},${-6}`
-                  }
-                  fill="none"
-                  stroke="#ff5c7c"
-                  strokeWidth={compact ? 1.4 : 2}
-                  strokeLinecap="round"
-                  pathLength={1}
-                  filter={`url(#${glowRed})`}
-                  style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: "draw 900ms cubic-bezier(.65,0,.35,1) 200ms forwards" }}
-                />
-              )}
+                {!unseen && (
+                  <rect
+                    x={-r + 2.5}
+                    y={-r + 2.5}
+                    width={2 * r - 5}
+                    height={2 * r - 5}
+                    rx={r}
+                    fill={color}
+                    opacity={estimated ? 0.45 : 1}
+                    style={{
+                      transformBox: "fill-box",
+                      transformOrigin: "bottom",
+                      transform: `scaleY(${Math.max(0.04, p)})`,
+                      transition: "transform 800ms cubic-bezier(.2,.8,.2,1)",
+                    }}
+                  />
+                )}
+                {!compact && (
+                  <text x={r + 11} y={5} fill={checked ? LINE : "#8b8e9f"} style={{ fontSize: 14.5, fontWeight: checked ? 750 : 550 }}>
+                    {label}
+                  </text>
+                )}
+                {isFlag && (
+                  <path
+                    d={
+                      compact
+                        ? `M${-r - 3},${r + 1} C${-r - 6},${-r - 4} ${r + 6},${-r - 6} ${r + 4},${0} C${r + 2},${r + 6} ${-r - 2},${r + 6} ${-r - 4},${-2}`
+                        : `M${-r - 4},${6} C${-r - 10},${-18} ${r + labelW * 0.6},${-21} ${r + labelW + 22},${-8} C${r + labelW + 32},${4} ${r + labelW},${19} ${r + 30},${19} C${-r},${20} ${-r - 12},${10} ${-r - 6},${-6}`
+                    }
+                    fill="none"
+                    stroke="#ef4a36"
+                    strokeWidth={compact ? 1.6 : 2.6}
+                    strokeLinecap="round"
+                    pathLength={1}
+                    style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: `draw 900ms cubic-bezier(.65,0,.35,1) ${delay + 500}ms forwards` }}
+                  />
+                )}
+              </g>
             </g>
           );
         })}
       </svg>
 
       {showLegend && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[12.5px] text-slate">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[12.5px] font-semibold text-slate">
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#8d95bd" strokeOpacity=".45" strokeDasharray="2 2" />
+              <circle cx="8" cy="8" r="6.5" fill="#fff" stroke={LINE} strokeOpacity=".4" strokeWidth="1.5" strokeDasharray="2 2" />
             </svg>
             Not checked yet
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#a59cff" strokeDasharray="2 2" />
-              <rect x="2" y="8" width="12" height="6" rx="3" fill="#7d8cff" opacity=".45" />
+              <circle cx="8" cy="8" r="6.5" fill="#fff" stroke={LINE} strokeWidth="1.5" strokeDasharray="2 2" />
+              <rect x="3" y="8" width="10" height="5" rx="2.5" fill="#3355ff" opacity=".45" />
             </svg>
-            Estimated from linked concepts
+            Estimated
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#a59cff" />
-              <rect x="2" y="4" width="12" height="10" rx="5" fill="#6f8bff" />
+              <circle cx="8" cy="8" r="6.5" fill="#fff" stroke={LINE} strokeWidth="1.5" />
+              <rect x="3" y="5" width="10" height="8" rx="4" fill="#3355ff" />
             </svg>
-            Glow = mastery
+            Fill = mastery
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="22" height="16" aria-hidden>
-              <path d="M3 11 C1 3, 20 1, 20 8 C20 14, 6 15, 2 9" fill="none" stroke="#ff5c7c" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M3 11 C1 3, 20 1, 20 8 C20 14, 6 15, 2 9" fill="none" stroke="#ef4a36" strokeWidth="2" strokeLinecap="round" />
             </svg>
             Misconception found
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <svg width="26" height="10" aria-hidden>
+              <line x1="2" y1="5" x2="24" y2="5" stroke="#3355ff" strokeWidth="3" />
+              <line x1="2" y1="5" x2="24" y2="5" stroke="#ffd23f" strokeWidth="3" strokeDasharray="0.1 8" strokeLinecap="round" />
+            </svg>
+            Hover a concept to trace its prerequisites
           </span>
         </div>
       )}

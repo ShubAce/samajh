@@ -46,12 +46,12 @@ function useRoster() {
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
-/** heatmap scale: deep night → indigo → cyan */
+/** heatmap scale: coral (struggling) → paper → electric blue (secure) */
 function heat(p: number) {
   const stops: [number, [number, number, number]][] = [
-    [0, [22, 26, 58]],
-    [0.5, [108, 92, 255]],
-    [1, [70, 211, 255]],
+    [0, [255, 196, 186]],
+    [0.5, [238, 241, 255]],
+    [1, [51, 85, 255]],
   ];
   const x = Math.max(0, Math.min(1, p));
   const i = x < 0.5 ? 0 : 1;
@@ -317,7 +317,7 @@ function ReteachView({ plan }: { plan: ReteachPlan }) {
           ))}
         </ol>
       </div>
-      <div className="rounded-[10px] bg-surface-2 ring-1 ring-rule px-4 py-3 text-[#eef3ea]">
+      <div className="rounded-[12px] border-2 border-line bg-[#23402f] px-4 py-3 text-[#eef3ea] shadow-[3px_3px_0_var(--color-line)]">
         <p className="text-[12px] font-semibold opacity-70">On the board</p>
         <p className="hand mt-0.5 whitespace-pre-line text-[18px] leading-snug">{plan.boardExplanation}</p>
       </div>
@@ -445,7 +445,7 @@ function Heatmap({ roster, liveId }: { roster: ClassStudent[]; liveId: string | 
               <span className="tabular font-semibold text-ink">{pct(hover.p)}</span>
             </>
           ) : (
-            "Brighter = stronger mastery. Struggling students at the top. Hover a cell for details."
+            "Blue = secure, coral = struggling. Struggling students at the top. Hover a cell for details."
           )}
         </p>
       </div>
@@ -481,7 +481,7 @@ function Heatmap({ roster, liveId }: { roster: ClassStudent[]; liveId: string | 
                       className="h-[19px] min-w-[19px] rounded-[5px] lg:h-[21px] lg:min-w-[24px]"
                       style={{
                         background: heat(p),
-                        boxShadow: p > 0.8 ? "0 0 8px rgba(70,211,255,.45)" : undefined,
+                        boxShadow: "inset 0 0 0 1px rgba(23,23,28,.14)",
                         outline: hover?.c === c.id || hover?.s === s.name ? "1px solid rgba(0,0,0,.25)" : undefined,
                       }}
                     />

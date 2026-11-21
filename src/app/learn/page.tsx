@@ -60,7 +60,7 @@ function LearnHome() {
           <h1 className="display mt-1 text-[32px] font-bold text-navy sm:text-[38px]">Your Class 10 Physics map</h1>
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
             {CHAPTERS.map((c) => (
-              <InkTube key={c.id} label={c.short} p={chapters[c.id]} />
+              <InkTube key={c.id} label={c.short} p={chapters[c.id]} color={c.color} />
             ))}
           </div>
         </div>
@@ -162,7 +162,7 @@ function NextActionCard({ action }: { action: NextAction }) {
   return (
     <div className="relative overflow-hidden next-step rounded-[20px] px-5 py-4 sm:px-6 sm:py-5">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-highlight text-[#1b1300] shadow-[0_0_24px_-4px_rgba(255,194,75,.8)]">{icon}</span>
+        <span className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-line bg-white text-navy shadow-[2px_2px_0_var(--color-line)]">{icon}</span>
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-semibold text-slate">Your next best step, chosen by the tutor agent</p>
           <h2 className="mt-0.5 text-[21px] font-bold leading-tight text-navy sm:text-[23px]">{action.title}</h2>

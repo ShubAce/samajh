@@ -21,19 +21,19 @@ export function AppShell({ children, wide = false }: { children: React.ReactNode
 
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-40 border-b border-white/[.06] bg-[#070a17]/70 backdrop-blur-xl">
-        <div className={cn("mx-auto flex h-16 items-center gap-3 px-4 sm:px-6", wide ? "max-w-[1400px]" : "max-w-[1200px]")}>
+      <header className="sticky top-0 z-40 border-b-2 border-line bg-white">
+        <div className={cn("mx-auto flex h-[68px] items-center gap-3 px-4 sm:px-6", wide ? "max-w-[1400px]" : "max-w-[1200px]")}>
           <Logo />
-          <nav className="ml-2 flex items-center gap-1 rounded-full bg-white/[.04] p-1 ring-1 ring-white/[.07] sm:ml-6" aria-label="Main">
+          <nav className="ml-2 flex items-center gap-2 sm:ml-8" aria-label="Main">
             {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13.5px] font-semibold transition-all",
+                  "inline-flex h-9 items-center gap-1.5 rounded-full border-2 px-3.5 text-[14px] font-bold transition-all",
                   pathname?.startsWith(l.href)
-                    ? "bg-[linear-gradient(135deg,rgba(125,107,255,.35),rgba(70,211,255,.18))] text-white shadow-[0_0_18px_-4px_rgba(125,107,255,.8)] ring-1 ring-white/15"
-                    : "text-slate hover:bg-white/5 hover:text-navy",
+                    ? "border-line bg-highlight text-navy shadow-[2px_2px_0_var(--color-line)]"
+                    : "border-transparent text-slate hover:border-line hover:bg-white hover:text-navy",
                 )}
               >
                 {l.icon}
@@ -70,14 +70,14 @@ function StudentMenu({ name, isDemo }: { name: string; isDemo: boolean }) {
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="inline-flex h-9 items-center gap-2 rounded-full bg-surface pl-1.5 pr-3 text-[14px] font-semibold text-navy ring-1 ring-navy/12 hover:ring-navy/30"
+        className="inline-flex h-10 items-center gap-2 rounded-full border-2 border-line bg-white pl-1 pr-3 text-[14px] font-bold text-navy shadow-[2px_2px_0_var(--color-line)] transition-transform hover:-translate-y-px"
       >
-        <span className="grid size-6 place-items-center rounded-full bg-[linear-gradient(135deg,#7d6bff,#46d3ff)] text-[12px] font-bold text-white">{name.slice(0, 1).toUpperCase()}</span>
+        <span className="grid size-7 place-items-center rounded-full border-2 border-line bg-ink text-[12px] font-extrabold text-white">{name.slice(0, 1).toUpperCase()}</span>
         {name}
-        {isDemo && <span className="rounded-full bg-highlight-wash px-1.5 text-[11.5px] font-semibold text-highlight ring-1 ring-highlight/25">demo</span>}
+        {isDemo && <span className="rounded-full border-[1.5px] border-line bg-highlight px-1.5 text-[11px] font-extrabold text-navy">demo</span>}
       </button>
       {open && (
-        <div className="absolute right-0 top-11 w-64 rounded-[14px] border border-white/10 bg-[#0f1430] p-1.5 shadow-[0_24px_60px_-20px_rgba(0,0,0,.9)]">
+        <div className="absolute right-0 top-12 w-64 rounded-[14px] border-2 border-line bg-white p-1.5 shadow-[4px_4px_0_var(--color-line)]">
           <button
             type="button"
             className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[14px] text-navy hover:bg-ink-wash"

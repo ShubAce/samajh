@@ -11,7 +11,8 @@ import { useMisconceptionDef, useSamajh } from "@/lib/store";
 import type { Attempt, Misconception, OptionId, Question, ReasoningAnalysis } from "@/lib/types";
 import { cn, pct } from "@/lib/utils";
 import { InkBar } from "./Ink";
-import { Handwriting, MarginNote, RedPenMark } from "./RedPen";
+import { ConfettiBurst } from "./Motion";
+import { Handwriting, RedPenMark } from "./RedPen";
 import { ReasoningInput, type Reasoning } from "./ReasoningInput";
 import { Button, Pill } from "./ui";
 
@@ -108,8 +109,8 @@ export function QuestionSheet({
   const concept = CONCEPT_BY_ID[question.conceptId];
 
   return (
-    <div className="graph-paper-faint overflow-hidden rounded-[16px] border border-rule shadow-[0_18px_40px_-28px_rgba(0,0,0,.45)]">
-      <div className="relative bg-surface pb-5 pl-12 pr-4 pt-4 sm:pb-7 sm:pl-[76px] sm:pr-7 sm:pt-6">
+    <div className="glass overflow-hidden rounded-[22px]">
+      <div className="relative bg-white pb-5 pl-12 pr-4 pt-4 sm:pb-7 sm:pl-[76px] sm:pr-7 sm:pt-6">
         {/* exam-sheet margin: red rule + the question number in pen */}
         <span aria-hidden className="absolute inset-y-0 left-9 w-[1.5px] bg-redpen/35 sm:left-[60px]" />
         {number !== undefined && (
@@ -142,11 +143,11 @@ export function QuestionSheet({
           </p>
         )}
 
-        <h2 className="mt-4 text-[20px] font-semibold leading-snug text-navy sm:text-[22px]" style={{ textWrap: "pretty" }}>
+        <h2 className="display mt-4 text-[22px] font-bold leading-snug text-navy sm:text-[25px]" style={{ textWrap: "pretty", letterSpacing: "-0.015em" }}>
           {question.stem}
         </h2>
 
-        <div className="mt-5 grid gap-2.5" role="radiogroup" aria-label="Answer options">
+        <div className="mt-5 grid gap-3" role="radiogroup" aria-label="Answer options">
           {question.options.map((o) => {
             const isChosen = chosen === o.id;
             const isAnswer = o.id === question.answer;
@@ -161,24 +162,27 @@ export function QuestionSheet({
                 disabled={phase !== "answer"}
                 onClick={() => setChosen(o.id)}
                 className={cn(
-                  "group flex w-full items-start gap-3 rounded-[12px] border bg-surface px-3.5 py-3 text-left transition-colors",
-                  !done && (isChosen ? "border-ink bg-ink-wash ring-2 ring-ink/20" : "border-navy/15 hover:border-navy/40"),
-                  done && isAnswer && "border-good/60 bg-good-wash",
-                  done && isChosen && !isAnswer && "border-redpen/50 bg-redpen-wash",
-                  done && !isChosen && !isAnswer && "border-navy/10 opacity-60",
+                  "group flex w-full items-start gap-3 rounded-[14px] border-2 bg-white px-3.5 py-3 text-left transition-[transform,box-shadow,background-color] duration-150",
+                  !done &&
+                    (isChosen
+                      ? "-translate-x-px -translate-y-px border-line bg-ink-soft shadow-[4px_4px_0_var(--color-line)]"
+                      : "border-line/25 hover:-translate-y-px hover:border-line hover:shadow-[3px_3px_0_var(--color-line)]"),
+                  done && isAnswer && "border-line bg-good-wash shadow-[3px_3px_0_var(--color-line)]",
+                  done && isChosen && !isAnswer && "border-line bg-redpen-wash shadow-[3px_3px_0_var(--color-line)]",
+                  done && !isChosen && !isAnswer && "border-line/15 opacity-55",
                 )}
               >
                 <span
                   className={cn(
-                    "grid size-7 shrink-0 place-items-center rounded-full border text-[13.5px] font-bold",
-                    isChosen && !done ? "border-ink bg-ink text-white" : "border-navy/25 text-navy",
-                    done && isAnswer && "border-good bg-good text-white",
-                    done && isChosen && !isAnswer && "border-redpen bg-redpen text-white",
+                    "grid size-8 shrink-0 place-items-center rounded-full border-2 text-[14px] font-extrabold transition-colors",
+                    isChosen && !done ? "border-line bg-ink text-white" : "border-line/70 bg-white text-navy",
+                    done && isAnswer && "border-line bg-good text-white",
+                    done && isChosen && !isAnswer && "border-line bg-redpen text-white",
                   )}
                 >
                   {done && isAnswer ? <Check className="size-4" /> : done && isChosen ? <X className="size-4" /> : o.id}
                 </span>
-                <span className="pt-0.5 text-[16px] leading-snug text-navy">
+                <span className="pt-1 text-[16px] font-medium leading-snug text-navy">
                   {trapHit ? <RedPenMark text={o.text}>{o.text}</RedPenMark> : o.text}
                 </span>
               </button>
@@ -318,18 +322,18 @@ function Feedback({
       <div className="flex flex-wrap items-center gap-3">
         <span
           className={cn(
-            "grid size-9 place-items-center rounded-full",
+            "relative grid size-10 place-items-center rounded-full border-2 border-line shadow-[2px_2px_0_var(--color-line)]",
             correct && !rightButShaky ? "bg-good text-white" : "bg-redpen text-white",
           )}
+          style={{ animation: "pop-in 420ms cubic-bezier(.2,.9,.3,1.3) both" }}
         >
-          {correct && !rightButShaky ? <Check className="size-5" /> : <X className="size-5" />}
+          {correct && !rightButShaky ? <Check className="size-5" strokeWidth={3} /> : <X className="size-5" strokeWidth={3} />}
+          {correct && !rightButShaky && <ConfettiBurst />}
         </span>
-        <h3 className="text-[21px] font-semibold text-navy display" style={{ fontVariationSettings: '"wdth" 108' }}>
-          {title}
-        </h3>
+        <h3 className="display text-[24px] font-extrabold text-navy">{title}</h3>
         {attempt.masteryAfter - attempt.masteryBefore >= 0.01 && (
           <span
-            className="tabular inline-flex h-7 items-center rounded-full bg-ink px-2.5 text-[13.5px] font-bold text-white"
+            className="tabular inline-flex h-8 items-center rounded-full border-2 border-line bg-ink px-3 text-[13.5px] font-extrabold text-white shadow-[2px_2px_0_var(--color-line)]"
             style={{ animation: "pop-in 520ms cubic-bezier(.2,.9,.3,1.2) 150ms both" }}
           >
             +{Math.round((attempt.masteryAfter - attempt.masteryBefore) * 100)}% mastery
@@ -340,7 +344,7 @@ function Feedback({
 
       {(reasoningShown || mis.length > 0 || a?.novelMisconception) && (
         <div className="grid gap-4 md:grid-cols-[1fr_minmax(0,240px)] md:gap-6">
-          <div className="rounded-[12px] bg-surface px-4 py-3 ring-1 ring-navy/10">
+          <div className="rounded-[14px] border-2 border-dashed border-line/40 bg-white px-4 py-3">
             {reasoningShown ? (
               <>
                 <p className="mb-1 text-[12.5px] font-semibold text-slate">
@@ -376,22 +380,29 @@ function Feedback({
           </div>
           {(mis.length > 0 || a?.novelMisconception) && (
             <div>
-              {mis.map((m) => (
-                <div key={m.id} className="mb-2">
-                  <MarginNote>
-                    {studentMis[m.id]?.status === "suspected" ? "Possible misconception:" : "Misconception:"} {m.title}
-                  </MarginNote>
+              {mis.map((m, i) => (
+                <div
+                  key={m.id}
+                  className="sticky-note mb-3 rounded-[6px] p-3.5"
+                  style={{ animation: `stick 520ms cubic-bezier(.2,.9,.3,1.2) ${450 + i * 150}ms both` }}
+                >
+                  <p className="text-[11.5px] font-extrabold text-redpen">
+                    {studentMis[m.id]?.status === "suspected" ? "Possible misconception" : "Misconception detected"}
+                    {a?.engine === "gemini" && a.confidence ? ` · ${Math.round(a.confidence * 100)}%` : ""}
+                  </p>
+                  <p className="display mt-0.5 text-[18px] font-extrabold leading-tight text-navy">{m.title}</p>
                   {!reasoningShown && (
-                    <p className="mt-1 text-[13.5px] text-slate">
+                    <p className="mt-1.5 text-[12.5px] font-semibold leading-snug text-navy/70">
                       This option is the trap for that idea. Explain your thinking next time and I can confirm it.
                     </p>
                   )}
                 </div>
               ))}
               {a?.novelMisconception && (
-                <div>
-                  <MarginNote>New idea spotted: {a.novelMisconception.title}</MarginNote>
-                  <p className="mt-1 text-[13.5px] text-slate">
+                <div className="sticky-note rounded-[6px] bg-[#e7ddff] p-3.5" style={{ animation: "stick 520ms cubic-bezier(.2,.9,.3,1.2) 450ms both" }}>
+                  <p className="text-[11.5px] font-extrabold text-ink-deep">New idea spotted</p>
+                  <p className="display mt-0.5 text-[18px] font-extrabold leading-tight text-navy">{a.novelMisconception.title}</p>
+                  <p className="mt-1.5 text-[12.5px] font-semibold leading-snug text-navy/70">
                     Not in our list yet, so it has gone to your teacher to review. If approved, Samajh will look for it in every student.
                   </p>
                 </div>
