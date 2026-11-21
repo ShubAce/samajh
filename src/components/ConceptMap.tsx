@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { CHAPTERS, CONCEPTS, CONCEPT_BY_ID, ancestorsOf, depthOf } from "@/lib/curriculum/concepts";
 import { BKT } from "@/lib/engine/learner";
 import { useMisconceptionDef } from "@/lib/store";
@@ -17,10 +17,10 @@ interface Layout {
 
 function computeLayout(compact: boolean): Layout {
   const COL_W = compact ? 54 : 168;
-  const ROW_H = compact ? 21 : 44;
-  const LANE_GAP = compact ? 18 : 34;
+  const ROW_H = compact ? 21 : 46;
+  const LANE_GAP = compact ? 18 : 36;
   const LEFT = compact ? 16 : 26;
-  const TOP = compact ? 22 : 40;
+  const TOP = compact ? 22 : 42;
   const r = compact ? 6.5 : 11.5;
   const memo: Record<string, number> = {};
   const pos: Layout["pos"] = {};
@@ -89,6 +89,7 @@ export function ConceptMap({
   showLegend?: boolean;
 }) {
   const L = layoutFor(compact);
+  const uid = useId().replace(/:/g, "");
   const [hover, setHover] = useState<string | null>(null);
   const active = hover ?? selected ?? null;
   const chain = useMemo(() => (active ? ancestorsOf(active) : new Map<string, number>()), [active]);
@@ -100,7 +101,6 @@ export function ConceptMap({
       if (m.status === "resolved") continue;
       const def = lookup(m.id);
       if (!def) continue;
-      // mark the concept where the misconception does the most damage (lowest mastery)
       const target = [...def.conceptIds].sort((a, b) => (states[a]?.p ?? BKT.pInit) - (states[b]?.p ?? BKT.pInit))[0];
       if (target) set.add(target);
     }
@@ -108,6 +108,8 @@ export function ConceptMap({
   }, [misconceptions, states, lookup]);
 
   const pulseSet = useMemo(() => new Set(pulse), [pulse]);
+  const glow = `glow${uid}`;
+  const glowRed = `glowr${uid}`;
 
   return (
     <div className={cn("relative", className)}>
@@ -117,6 +119,35 @@ export function ConceptMap({
         role="img"
         aria-label="Concept map of Class 10 Physics with your mastery of each concept"
       >
+        <defs>
+          <linearGradient id={`fill${uid}`} x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0" stopColor="#5b4cff" />
+            <stop offset="1" stopColor="#46d3ff" />
+          </linearGradient>
+          <linearGradient id={`edge${uid}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stopColor="#7d6bff" />
+            <stop offset="1" stopColor="#46d3ff" />
+          </linearGradient>
+          <radialGradient id={`halo${uid}`}>
+            <stop offset="0" stopColor="#7d8cff" stopOpacity=".75" />
+            <stop offset="1" stopColor="#7d8cff" stopOpacity="0" />
+          </radialGradient>
+          <filter id={glow} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation={compact ? 1.4 : 2.4} result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <filter id={glowRed} x="-20%" y="-60%" width="140%" height="220%">
+            <feGaussianBlur stdDeviation={compact ? 1 : 1.8} result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
         {/* lanes */}
         {L.lanes.map((lane, i) => (
           <g key={lane.id}>
@@ -124,18 +155,18 @@ export function ConceptMap({
               <line
                 x1={0}
                 x2={L.width}
-                y1={lane.top - (compact ? 10 : 18)}
-                y2={lane.top - (compact ? 10 : 18)}
-                stroke="var(--color-navy)"
-                strokeOpacity={0.08}
-                strokeDasharray="4 5"
+                y1={lane.top - (compact ? 10 : 19)}
+                y2={lane.top - (compact ? 10 : 19)}
+                stroke="#ffffff"
+                strokeOpacity={0.06}
+                strokeDasharray="3 6"
               />
             )}
             <text
               x={compact ? 2 : 4}
-              y={lane.top - (compact ? 6 : 13)}
-              className="fill-slate"
-              style={{ fontSize: compact ? 8.5 : 13.5, fontWeight: 650, fontVariationSettings: '"wdth" 112' }}
+              y={lane.top - (compact ? 6 : 14)}
+              fill="#8d95bd"
+              style={{ fontSize: compact ? 8.5 : 12.5, fontWeight: 700, letterSpacing: ".02em" }}
             >
               {lane.label}
             </text>
@@ -157,9 +188,10 @@ export function ConceptMap({
                 key={`${p}->${c.id}`}
                 d={`M${x1},${a.y} C${x1 + dx},${a.y} ${x2 - dx},${b.y} ${x2},${b.y}`}
                 fill="none"
-                stroke={onChain ? "var(--color-ink)" : "var(--color-navy)"}
-                strokeOpacity={onChain ? 0.75 : 0.13}
-                strokeWidth={onChain ? (compact ? 1.4 : 1.8) : compact ? 0.8 : 1.1}
+                stroke={onChain ? `url(#edge${uid})` : "#aab4ff"}
+                strokeOpacity={onChain ? 1 : 0.13}
+                strokeWidth={onChain ? (compact ? 1.5 : 2.2) : compact ? 0.8 : 1.1}
+                filter={onChain ? `url(#${glow})` : undefined}
                 style={{ transition: "stroke-opacity 200ms" }}
               />
             );
@@ -178,8 +210,9 @@ export function ConceptMap({
           const isFocus = focus === c.id;
           const isFlag = flagged.has(c.id);
           const label = c.short;
-          const labelW = label.length * (compact ? 0 : 7.9);
+          const labelW = label.length * (compact ? 0 : 7.6);
           const r = L.r;
+          const bright = checked ? p : estimated ? p * 0.45 : 0;
           return (
             <g
               key={c.id}
@@ -198,27 +231,44 @@ export function ConceptMap({
               onMouseEnter={() => setHover(c.id)}
               onMouseLeave={() => setHover(null)}
             >
-              <title>{`${c.title} — ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}% (not asked directly)` : "not checked yet"}`}</title>
+              <title>{`${c.title}: ${checked ? `${Math.round(p * 100)}% mastery` : estimated ? `estimated ${Math.round(p * 100)}% (not asked directly)` : "not checked yet"}`}</title>
+              {/* star halo grows with mastery */}
+              {bright > 0.35 && <circle r={r * (1.6 + bright * 1.1)} fill={`url(#halo${uid})`} opacity={bright * 0.85} />}
               {!compact && isSel && (
-                <rect x={r + 3} y={-12} width={labelW + 12} height={24} rx={6} fill="var(--color-highlight)" opacity={0.85} />
+                <rect
+                  x={r + 3}
+                  y={-13}
+                  width={labelW + 14}
+                  height={26}
+                  rx={8}
+                  fill="rgba(255,194,75,.14)"
+                  stroke="rgba(255,194,75,.55)"
+                />
               )}
               {isFocus && (
-                <circle r={r + (compact ? 4 : 6)} fill="none" stroke="var(--color-highlight)" strokeWidth={compact ? 3 : 5} opacity={0.95} />
+                <circle
+                  r={r + (compact ? 4 : 6)}
+                  fill="none"
+                  stroke="#ffc24b"
+                  strokeWidth={compact ? 1.6 : 2.2}
+                  filter={`url(#${glow})`}
+                  style={{ animation: "pulse-ring 1.6s ease-in-out infinite" }}
+                />
               )}
               {pulseSet.has(c.id) && (
                 <circle
                   r={r}
                   fill="none"
-                  stroke="var(--color-ink)"
+                  stroke="#46d3ff"
                   strokeWidth={2}
                   style={{ transformBox: "fill-box", transformOrigin: "center", animation: "ping-once 1100ms ease-out 1" }}
                 />
               )}
               <circle
                 r={r}
-                fill="white"
-                stroke="var(--color-ink)"
-                strokeOpacity={unseen ? 0.35 : 0.9}
+                fill="#111733"
+                stroke={unseen ? "#8d95bd" : "#a59cff"}
+                strokeOpacity={unseen ? 0.4 : 0.9}
                 strokeWidth={compact ? 1.1 : 1.5}
                 strokeDasharray={unseen || estimated ? (compact ? "2 2" : "3 3") : undefined}
               />
@@ -229,8 +279,9 @@ export function ConceptMap({
                   width={2 * r - 4}
                   height={2 * r - 4}
                   rx={r}
-                  fill="var(--color-ink)"
-                  opacity={estimated ? 0.38 : 1}
+                  fill={`url(#fill${uid})`}
+                  opacity={estimated ? 0.42 : 1}
+                  filter={checked && p > 0.7 ? `url(#${glow})` : undefined}
                   style={{
                     transformBox: "fill-box",
                     transformOrigin: "bottom",
@@ -241,10 +292,10 @@ export function ConceptMap({
               )}
               {!compact && (
                 <text
-                  x={r + 9}
+                  x={r + 10}
                   y={5}
-                  style={{ fontSize: 15, fontWeight: checked ? 600 : 500 }}
-                  className={checked ? "fill-navy" : "fill-slate"}
+                  fill={isSel ? "#ffd27a" : checked ? "#e9ecff" : "#8d95bd"}
+                  style={{ fontSize: 14.5, fontWeight: checked ? 650 : 500 }}
                 >
                   {label}
                 </text>
@@ -254,13 +305,14 @@ export function ConceptMap({
                   d={
                     compact
                       ? `M${-r - 3},${r + 1} C${-r - 6},${-r - 4} ${r + 6},${-r - 6} ${r + 4},${0} C${r + 2},${r + 6} ${-r - 2},${r + 6} ${-r - 4},${-2}`
-                      : `M${-r - 4},${6} C${-r - 10},${-16} ${r + labelW * 0.6},${-19} ${r + labelW + 18},${-8} C${r + labelW + 28},${4} ${r + labelW},${17} ${r + 30},${17} C${-r},${18} ${-r - 12},${10} ${-r - 6},${-6}`
+                      : `M${-r - 4},${6} C${-r - 10},${-17} ${r + labelW * 0.6},${-20} ${r + labelW + 20},${-8} C${r + labelW + 30},${4} ${r + labelW},${18} ${r + 30},${18} C${-r},${19} ${-r - 12},${10} ${-r - 6},${-6}`
                   }
                   fill="none"
-                  stroke="var(--color-redpen)"
+                  stroke="#ff5c7c"
                   strokeWidth={compact ? 1.4 : 2}
                   strokeLinecap="round"
                   pathLength={1}
+                  filter={`url(#${glowRed})`}
                   style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: "draw 900ms cubic-bezier(.65,0,.35,1) 200ms forwards" }}
                 />
               )}
@@ -270,30 +322,30 @@ export function ConceptMap({
       </svg>
 
       {showLegend && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[13px] text-slate">
+        <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1 text-[12.5px] text-slate">
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="white" stroke="var(--color-ink)" strokeOpacity=".35" strokeDasharray="2 2" />
+              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#8d95bd" strokeOpacity=".45" strokeDasharray="2 2" />
             </svg>
             Not checked yet
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="white" stroke="var(--color-ink)" strokeDasharray="2 2" />
-              <rect x="2" y="8" width="12" height="6" rx="3" fill="var(--color-ink)" opacity=".38" />
+              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#a59cff" strokeDasharray="2 2" />
+              <rect x="2" y="8" width="12" height="6" rx="3" fill="#7d8cff" opacity=".45" />
             </svg>
             Estimated from linked concepts
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="16" height="16" aria-hidden>
-              <circle cx="8" cy="8" r="7" fill="white" stroke="var(--color-ink)" />
-              <rect x="2" y="4" width="12" height="10" rx="5" fill="var(--color-ink)" />
+              <circle cx="8" cy="8" r="7" fill="#111733" stroke="#a59cff" />
+              <rect x="2" y="4" width="12" height="10" rx="5" fill="#6f8bff" />
             </svg>
-            Ink level = mastery
+            Glow = mastery
           </span>
           <span className="inline-flex items-center gap-2">
             <svg width="22" height="16" aria-hidden>
-              <path d="M3 11 C1 3, 20 1, 20 8 C20 14, 6 15, 2 9" fill="none" stroke="var(--color-redpen)" strokeWidth="1.8" strokeLinecap="round" />
+              <path d="M3 11 C1 3, 20 1, 20 8 C20 14, 6 15, 2 9" fill="none" stroke="#ff5c7c" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
             Misconception found
           </span>

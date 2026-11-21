@@ -73,7 +73,7 @@ function NameStep() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Your first name"
           maxLength={24}
-          className="h-12 rounded-[11px] border border-navy/20 bg-white px-4 text-[17px] text-navy focus:border-ink focus:outline-none"
+          className="h-12 rounded-[11px] border border-navy/20 bg-surface px-4 text-[17px] text-navy focus:border-ink focus:outline-none"
         />
         <Button size="lg" type="submit" disabled={!name.trim()}>
           Start the diagnostic
@@ -157,7 +157,7 @@ function Runner({ onFinish }: { onFinish: () => void }) {
           </p>
           <div className="flex flex-1 gap-1" aria-hidden>
             {Array.from({ length: DIAGNOSTIC_LENGTH }).map((_, i) => (
-              <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < asked ? "var(--color-ink)" : "rgba(22,32,74,.1)" }} />
+              <span key={i} className="h-1.5 flex-1 rounded-full" style={{ background: i < asked ? "var(--color-ink)" : "rgba(0,0,0,.1)" }} />
             ))}
           </div>
         </div>
@@ -277,7 +277,7 @@ function Results() {
               ))}
             </Sheet>
           )}
-          <div className="rounded-[16px] border border-[#f0d23a] bg-highlight-wash p-5">
+          <div className="next-step rounded-[20px] p-5">
             <p className="text-[13.5px] font-semibold text-slate">Recommended next step</p>
             <p className="mt-0.5 text-[19px] font-bold leading-tight text-navy">{action.title}</p>
             <p className="mt-1 text-[14.5px] leading-snug text-navy/80">{action.why}</p>

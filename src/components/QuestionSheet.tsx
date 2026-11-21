@@ -108,8 +108,8 @@ export function QuestionSheet({
   const concept = CONCEPT_BY_ID[question.conceptId];
 
   return (
-    <div className="graph-paper-faint overflow-hidden rounded-[16px] border border-rule shadow-[0_18px_40px_-28px_rgba(22,32,74,.45)]">
-      <div className="relative bg-white/92 pb-5 pl-12 pr-4 pt-4 sm:pb-7 sm:pl-[76px] sm:pr-7 sm:pt-6">
+    <div className="graph-paper-faint overflow-hidden rounded-[16px] border border-rule shadow-[0_18px_40px_-28px_rgba(0,0,0,.45)]">
+      <div className="relative bg-surface pb-5 pl-12 pr-4 pt-4 sm:pb-7 sm:pl-[76px] sm:pr-7 sm:pt-6">
         {/* exam-sheet margin: red rule + the question number in pen */}
         <span aria-hidden className="absolute inset-y-0 left-9 w-[1.5px] bg-redpen/35 sm:left-[60px]" />
         {number !== undefined && (
@@ -161,7 +161,7 @@ export function QuestionSheet({
                 disabled={phase !== "answer"}
                 onClick={() => setChosen(o.id)}
                 className={cn(
-                  "group flex w-full items-start gap-3 rounded-[12px] border bg-white px-3.5 py-3 text-left transition-colors",
+                  "group flex w-full items-start gap-3 rounded-[12px] border bg-surface px-3.5 py-3 text-left transition-colors",
                   !done && (isChosen ? "border-ink bg-ink-wash ring-2 ring-ink/20" : "border-navy/15 hover:border-navy/40"),
                   done && isAnswer && "border-good/60 bg-good-wash",
                   done && isChosen && !isAnswer && "border-redpen/50 bg-redpen-wash",
@@ -340,7 +340,7 @@ function Feedback({
 
       {(reasoningShown || mis.length > 0 || a?.novelMisconception) && (
         <div className="grid gap-4 md:grid-cols-[1fr_minmax(0,240px)] md:gap-6">
-          <div className="rounded-[12px] bg-white px-4 py-3 ring-1 ring-navy/10">
+          <div className="rounded-[12px] bg-surface px-4 py-3 ring-1 ring-navy/10">
             {reasoningShown ? (
               <>
                 <p className="mb-1 text-[12.5px] font-semibold text-slate">

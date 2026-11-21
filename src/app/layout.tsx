@@ -1,17 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Anek_Devanagari, Anek_Latin, Kalam } from "next/font/google";
+import { Anek_Devanagari, Kalam, Plus_Jakarta_Sans, Sora } from "next/font/google";
 import "./globals.css";
 
-const anek = Anek_Latin({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  axes: ["wdth"],
-  variable: "--font-anek",
+  variable: "--font-jakarta",
+  display: "swap",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
   display: "swap",
 });
 
 const anekDeva = Anek_Devanagari({
   subsets: ["devanagari"],
-  axes: ["wdth"],
+  weight: ["600", "700"],
   variable: "--font-anek-deva",
   display: "swap",
 });
@@ -48,12 +53,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fdfdfb",
+  themeColor: "#070a17",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${anek.variable} ${anekDeva.variable} ${kalam.variable}`}>
+    <html lang="en" className={`${jakarta.variable} ${sora.variable} ${anekDeva.variable} ${kalam.variable}`}>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );

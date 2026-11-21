@@ -16,16 +16,16 @@ async function googleFont(family: string, query: string): Promise<ArrayBuffer | 
 }
 
 export default async function OpengraphImage() {
-  const [anek, anekBold, kalam] = await Promise.all([
-    googleFont("Anek+Latin", "wght@500"),
-    googleFont("Anek+Latin", "wght@700"),
+  const [sora, jakarta, kalam] = await Promise.all([
+    googleFont("Sora", "wght@700"),
+    googleFont("Plus+Jakarta+Sans", "wght@600"),
     googleFont("Kalam", "wght@400"),
   ]);
   const fonts = [
-    anek && { name: "Anek", data: anek, weight: 500 as const, style: "normal" as const },
-    anekBold && { name: "Anek", data: anekBold, weight: 700 as const, style: "normal" as const },
+    sora && { name: "Sora", data: sora, weight: 700 as const, style: "normal" as const },
+    jakarta && { name: "Jakarta", data: jakarta, weight: 600 as const, style: "normal" as const },
     kalam && { name: "Kalam", data: kalam, weight: 400 as const, style: "normal" as const },
-  ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 500 | 700 | 400; style: "normal" }[];
+  ].filter(Boolean) as { name: string; data: ArrayBuffer; weight: 700 | 600 | 400; style: "normal" }[];
 
   return new ImageResponse(
     (
@@ -35,35 +35,63 @@ export default async function OpengraphImage() {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          padding: "56px 72px",
-          backgroundColor: "#ffffff",
+          padding: "54px 70px",
+          backgroundColor: "#070a17",
           backgroundImage:
-            "linear-gradient(#c4dccd 1px, transparent 1px), linear-gradient(90deg, #c4dccd 1px, transparent 1px), linear-gradient(#e4efe8 1px, transparent 1px), linear-gradient(90deg, #e4efe8 1px, transparent 1px)",
-          backgroundSize: "60px 60px, 60px 60px, 12px 12px, 12px 12px",
-          fontFamily: "Anek",
-          color: "#16204a",
+            "radial-gradient(700px 420px at 8% 0%, rgba(108,92,255,.55), transparent 70%), radial-gradient(600px 400px at 100% 10%, rgba(31,182,255,.32), transparent 70%), radial-gradient(500px 360px at 60% 110%, rgba(255,79,139,.22), transparent 70%)",
+          fontFamily: "Jakarta",
+          color: "#eef0ff",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <div
             style={{
-              width: 44,
-              height: 44,
-              borderRadius: 999,
-              border: "4px solid #1f3bb3",
+              width: 48,
+              height: 48,
+              borderRadius: 14,
               display: "flex",
-              alignItems: "flex-end",
-              overflow: "hidden",
-              background: "#fff",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundImage: "linear-gradient(135deg, #6c5cff, #46d3ff)",
+              boxShadow: "0 0 30px rgba(108,92,255,.8)",
+              fontSize: 26,
+              fontFamily: "Sora",
+              color: "white",
             }}
           >
-            <div style={{ width: "100%", height: "55%", background: "#1f3bb3" }} />
+            S
           </div>
-          <div style={{ fontSize: 40, fontWeight: 700, color: "#1f3bb3" }}>Samajh</div>
-          <div style={{ fontSize: 26, color: "#5a6283", marginLeft: 12 }}>Adaptive tutor for CBSE Class 10 Physics</div>
+          <div style={{ fontSize: 34, fontFamily: "Sora", color: "white" }}>Samajh</div>
+          <div
+            style={{
+              display: "flex",
+              marginLeft: 14,
+              padding: "6px 16px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,.14)",
+              background: "rgba(255,255,255,.06)",
+              fontSize: 20,
+              color: "#c9c3ff",
+            }}
+          >
+            Adaptive tutor · CBSE Class 10 Physics · Gemini
+          </div>
         </div>
 
-        <div style={{ display: "flex", fontSize: 76, fontWeight: 700, lineHeight: 1.05, marginTop: 44, maxWidth: 1000 }}>
+        <div
+          style={{
+            display: "flex",
+            fontSize: 74,
+            fontFamily: "Sora",
+            lineHeight: 1.04,
+            letterSpacing: "-2px",
+            marginTop: 40,
+            maxWidth: 980,
+            backgroundImage: "linear-gradient(100deg, #ffffff 0%, #d9d4ff 45%, #8f86ff 75%, #5fd9ff 100%)",
+            backgroundClip: "text",
+            color: "transparent",
+          }}
+        >
           Finds out why you got it wrong.
         </div>
 
@@ -71,22 +99,29 @@ export default async function OpengraphImage() {
           style={{
             display: "flex",
             flexDirection: "column",
-            marginTop: 40,
-            padding: "26px 32px",
-            background: "rgba(255,255,255,.92)",
-            borderRadius: 18,
-            border: "1px solid #e3e6ee",
+            marginTop: 34,
+            padding: "24px 30px",
+            borderRadius: 22,
+            border: "1px solid rgba(255,255,255,.12)",
+            background: "rgba(255,255,255,.05)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", fontFamily: "Kalam", fontSize: 36, color: "#1f3bb3", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", fontFamily: "Kalam", fontSize: 34, color: "#b8c4ff", flexWrap: "wrap" }}>
             <span>The first bulb is brighter because</span>
-            <span style={{ display: "flex", border: "4px solid #e03131", borderRadius: 999, padding: "0 18px", margin: "0 10px" }}>
+            <span
+              style={{
+                display: "flex",
+                border: "4px solid #ff5c7c",
+                borderRadius: 999,
+                padding: "0 18px",
+                margin: "0 10px",
+                boxShadow: "0 0 22px rgba(255,92,124,.7)",
+              }}
+            >
               it uses up the current
             </span>
           </div>
-          <div style={{ display: "flex", fontFamily: "Kalam", fontSize: 34, color: "#e03131", marginTop: 14 }}>
-            Misconception: current gets used up
-          </div>
+          <div style={{ display: "flex", fontSize: 26, color: "#ff5c7c", marginTop: 14 }}>Misconception detected: current gets used up</div>
         </div>
       </div>
     ),

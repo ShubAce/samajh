@@ -244,7 +244,7 @@ function Session({ plan }: { plan: Plan }) {
                   className="h-1.5 flex-1 rounded-full"
                   style={{
                     background:
-                      i < results.length ? (results[i].correct ? "var(--color-ink)" : "var(--color-redpen)") : "rgba(22,32,74,.1)",
+                      i < results.length ? (results[i].correct ? "var(--color-ink)" : "var(--color-redpen)") : "rgba(0,0,0,.1)",
                   }}
                 />
               ))}
@@ -411,7 +411,7 @@ function Summary({
           </div>
         )}
       </Sheet>
-      <div className="rounded-[16px] border border-[#f0d23a] bg-highlight-wash p-5">
+      <div className="next-step rounded-[20px] p-5">
         <p className="text-[13.5px] font-semibold text-slate">Next best step</p>
         <p className="mt-0.5 text-[19px] font-bold text-navy">{action.title}</p>
         <p className="mt-1 text-[14.5px] text-navy/80">{action.why}</p>

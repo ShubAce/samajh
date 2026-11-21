@@ -46,6 +46,22 @@ function useRoster() {
 
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
+/** heatmap scale: deep night → indigo → cyan */
+function heat(p: number) {
+  const stops: [number, [number, number, number]][] = [
+    [0, [22, 26, 58]],
+    [0.5, [108, 92, 255]],
+    [1, [70, 211, 255]],
+  ];
+  const x = Math.max(0, Math.min(1, p));
+  const i = x < 0.5 ? 0 : 1;
+  const [x0, c0] = stops[i];
+  const [x1, c1] = stops[i + 1];
+  const t = (x - x0) / (x1 - x0);
+  const c = c0.map((v, k) => Math.round(v + (c1[k] - v) * t));
+  return `rgb(${c[0]} ${c[1]} ${c[2]})`;
+}
+
 function TeacherDashboard() {
   const { roster, liveId } = useRoster();
   const discovered = useSamajh((s) => s.discovered);
@@ -163,13 +179,13 @@ function Priorities({
       ),
     });
   return (
-    <section className="rounded-[16px] border border-[#f0d23a] bg-highlight-wash px-5 py-5 sm:px-6" aria-labelledby="priorities">
+    <section className="next-step rounded-[20px] px-5 py-5 sm:px-6" aria-labelledby="priorities">
       <h2 id="priorities" className="text-[17px] font-bold text-navy">
         This week&rsquo;s priorities, chosen by Samajh
       </h2>
       <ol className="mt-3 grid gap-3 lg:grid-cols-3">
         {items.map((it, i) => (
-          <li key={it.title} className="flex gap-3 rounded-[12px] bg-white/80 p-4 ring-1 ring-[#f0d23a]/60">
+          <li key={it.title} className="flex gap-3 rounded-[12px] bg-surface p-4 ring-1 ring-highlight/25">
             <span className="hand text-[26px] leading-none text-ink">{i + 1}.</span>
             <div className="min-w-0 flex-1">
               <p className="text-[15.5px] font-bold leading-snug text-navy">{it.title}</p>
@@ -200,7 +216,7 @@ function Clusters({
       <p className="mt-1 text-[14px] text-slate">Grouped by the faulty idea behind the wrong answers, not by chapter. Fix one idea and marks improve across several topics.</p>
       <ul className="mt-4 grid gap-3">
         {clusters.slice(0, 7).map((c) => (
-          <li key={c.id} id={`cluster-${c.id}`} className={cn("rounded-[12px] border bg-white transition-colors", open === c.id ? "border-redpen/40" : "border-navy/10")}>
+          <li key={c.id} id={`cluster-${c.id}`} className={cn("rounded-[12px] border bg-surface transition-colors", open === c.id ? "border-redpen/40" : "border-navy/10")}>
             <button
               type="button"
               className="flex w-full items-start gap-3 px-4 py-3 text-left"
@@ -301,7 +317,7 @@ function ReteachView({ plan }: { plan: ReteachPlan }) {
           ))}
         </ol>
       </div>
-      <div className="rounded-[10px] bg-[#1f2a2a] px-4 py-3 text-[#eef3ea]">
+      <div className="rounded-[10px] bg-surface-2 ring-1 ring-rule px-4 py-3 text-[#eef3ea]">
         <p className="text-[12px] font-semibold opacity-70">On the board</p>
         <p className="hand mt-0.5 whitespace-pre-line text-[18px] leading-snug">{plan.boardExplanation}</p>
       </div>
@@ -376,7 +392,7 @@ function Proposals() {
       {pending.length === 0 && decided.length === 0 && <p className="mt-4 text-[14px] text-slate">Nothing new right now.</p>}
       <ul className="mt-4 grid gap-3 lg:grid-cols-2">
         {pending.map((p) => (
-          <li key={p.id} className="rounded-[12px] border border-redpen/25 bg-white p-4">
+          <li key={p.id} className="rounded-[12px] border border-redpen/25 bg-surface p-4">
             <MarginNote delay={0} className="text-[19px]">{p.title}</MarginNote>
             <p className="mt-1 text-[14px] text-navy">{p.description}</p>
             <p className="hand mt-2 text-[16.5px] leading-snug text-ink">&ldquo;{p.evidenceQuote}&rdquo;</p>
@@ -394,7 +410,7 @@ function Proposals() {
           </li>
         ))}
         {decided.map((p) => (
-          <li key={p.id} className="rounded-[12px] border border-navy/10 bg-white/70 p-4 opacity-80">
+          <li key={p.id} className="rounded-[12px] border border-navy/10 bg-surface p-4 opacity-80">
             <p className="text-[15px] font-semibold text-navy">{p.title}</p>
             <p className="mt-1 text-[13px] text-slate">
               {p.status === "approved" ? "Added to the library. Samajh now checks every student's reasoning for it." : "Dismissed."}
@@ -429,7 +445,7 @@ function Heatmap({ roster, liveId }: { roster: ClassStudent[]; liveId: string | 
               <span className="tabular font-semibold text-ink">{pct(hover.p)}</span>
             </>
           ) : (
-            "Darker ink = stronger mastery. Struggling students at the top. Hover a cell for details."
+            "Brighter = stronger mastery. Struggling students at the top. Hover a cell for details."
           )}
         </p>
       </div>
@@ -462,10 +478,11 @@ function Heatmap({ roster, liveId }: { roster: ClassStudent[]; liveId: string | 
                       key={c.id}
                       onMouseEnter={() => setHover({ s: s.name, c: c.id, p })}
                       title={`${s.name}: ${c.title} ${pct(p)}`}
-                      className="size-[15px] min-w-[15px] rounded-[3px]"
+                      className="h-[19px] min-w-[19px] rounded-[5px] lg:h-[21px] lg:min-w-[24px]"
                       style={{
-                        background: `color-mix(in srgb, var(--color-ink) ${Math.round(p * 100)}%, #f3f5fb)`,
-                        outline: hover?.c === c.id || hover?.s === s.name ? "1px solid rgba(22,32,74,.25)" : undefined,
+                        background: heat(p),
+                        boxShadow: p > 0.8 ? "0 0 8px rgba(70,211,255,.45)" : undefined,
+                        outline: hover?.c === c.id || hover?.s === s.name ? "1px solid rgba(0,0,0,.25)" : undefined,
                       }}
                     />
                   );

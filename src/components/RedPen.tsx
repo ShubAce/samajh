@@ -24,9 +24,14 @@ export function RedPenCircle({
       <span
         aria-hidden
         className="pointer-events-none absolute"
-        style={{ left: "calc(-15% - 6px)", right: "calc(-15% - 6px)", top: "calc(-32% - 7px)", bottom: "calc(-32% - 7px)" }}
+        style={{ left: "calc(-6% - 7px)", right: "calc(-6% - 7px)", top: "calc(-34% - 6px)", bottom: "calc(-34% - 6px)" }}
       >
-      <svg className="block h-full w-full overflow-visible" viewBox="0 0 200 60" preserveAspectRatio="none">
+      <svg
+        className="block h-full w-full overflow-visible"
+        viewBox="0 0 200 60"
+        preserveAspectRatio="none"
+        style={{ filter: "drop-shadow(0 0 5px rgba(255,92,124,.75))" }}
+      >
         <path
           d="M30 44 C 10 34, 14 12, 70 7 C 130 2, 196 10, 194 31 C 192 52, 120 58, 72 55 C 26 52, 4 42, 9 27 C 13 16, 34 9, 58 8"
           fill="none"
@@ -57,7 +62,13 @@ export function RedPenUnderline({ children, delay = 0 }: { children: React.React
   return (
     <span className="relative inline">
       {children}
-      <svg aria-hidden className="pointer-events-none absolute left-0 -bottom-1.5 h-2 w-full overflow-visible" viewBox="0 0 100 8" preserveAspectRatio="none">
+      <svg
+        aria-hidden
+        className="pointer-events-none absolute left-0 -bottom-1.5 h-2 w-full overflow-visible"
+        viewBox="0 0 100 8"
+        preserveAspectRatio="none"
+        style={{ filter: "drop-shadow(0 0 4px rgba(255,92,124,.8))" }}
+      >
         <path
           d="M2 5 C 20 2, 40 7, 60 4 S 90 3, 98 5"
           fill="none"
@@ -77,7 +88,7 @@ export function MarginNote({ children, className, delay = 600 }: { children: Rea
   return (
     <p
       className={cn("hand text-redpen text-[19px] leading-snug opacity-0", className)}
-      style={{ animation: `write 700ms ease-out ${delay}ms forwards` }}
+      style={{ animation: `write 700ms ease-out ${delay}ms forwards`, textShadow: "0 0 18px rgba(255,92,124,.45)" }}
     >
       {children}
     </p>
@@ -86,5 +97,5 @@ export function MarginNote({ children, className, delay = 600 }: { children: Rea
 
 /** Student handwriting (blue ink) */
 export function Handwriting({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <span className={cn("hand text-ink text-[19px] leading-relaxed", className)}>{children}</span>;
+  return <span className={cn("hand text-[#b8c4ff] text-[19px] leading-relaxed", className)}>{children}</span>;
 }

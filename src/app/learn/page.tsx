@@ -160,9 +160,9 @@ function NextActionCard({ action }: { action: NextAction }) {
       <Target className="size-5" />
     );
   return (
-    <div className="relative overflow-hidden rounded-[16px] border border-[#f0d23a] bg-highlight-wash px-5 py-4 sm:px-6 sm:py-5">
+    <div className="relative overflow-hidden next-step rounded-[20px] px-5 py-4 sm:px-6 sm:py-5">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-highlight text-navy">{icon}</span>
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-highlight text-[#1b1300] shadow-[0_0_24px_-4px_rgba(255,194,75,.8)]">{icon}</span>
         <div className="min-w-0 flex-1">
           <p className="text-[13.5px] font-semibold text-slate">Your next best step, chosen by the tutor agent</p>
           <h2 className="mt-0.5 text-[21px] font-bold leading-tight text-navy sm:text-[23px]">{action.title}</h2>

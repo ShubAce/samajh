@@ -114,7 +114,7 @@ export function ReasoningInput({
         <p className="text-[14.5px] font-semibold text-navy">
           Explain your thinking <span className="font-normal text-slate">(optional, but this is how Samajh finds the why)</span>
         </p>
-        <div className="flex rounded-[9px] bg-white p-0.5 ring-1 ring-navy/10" role="tablist" aria-label="How to explain">
+        <div className="flex rounded-[9px] bg-surface p-0.5 ring-1 ring-navy/10" role="tablist" aria-label="How to explain">
           {tabs.map((t) => (
             <button
               key={t.id}
@@ -146,7 +146,7 @@ export function ReasoningInput({
             }}
             rows={3}
             placeholder="e.g. I think the first bulb uses up some current, so… (English, Hindi or Hinglish)"
-            className="hand w-full resize-y rounded-[10px] border border-navy/15 bg-white px-3 py-2 text-[18px] leading-relaxed text-ink placeholder:text-faint/80 focus:border-ink/50 focus:outline-none"
+            className="hand w-full resize-y rounded-[10px] border border-navy/15 bg-surface px-3 py-2 text-[18px] leading-relaxed text-ink placeholder:text-faint/80 focus:border-ink/50 focus:outline-none"
           />
         )}
 
@@ -157,7 +157,7 @@ export function ReasoningInput({
                 type="button"
                 disabled={disabled || busy}
                 onClick={startRec}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[14.5px] font-semibold text-navy ring-1 ring-navy/15 hover:ring-ink/50"
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-surface px-4 text-[14.5px] font-semibold text-navy ring-1 ring-navy/15 hover:ring-ink/50"
               >
                 <span className="grid size-6 place-items-center rounded-full bg-redpen text-white">
                   <Mic className="size-3.5" />
@@ -230,7 +230,7 @@ export function ReasoningInput({
                   type="button"
                   disabled={disabled || busy}
                   onClick={() => fileRef.current?.click()}
-                  className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[14.5px] font-semibold text-navy ring-1 ring-navy/15 hover:ring-ink/50"
+                  className="inline-flex h-11 items-center gap-2 rounded-full bg-surface px-4 text-[14.5px] font-semibold text-navy ring-1 ring-navy/15 hover:ring-ink/50"
                 >
                   <Camera className="size-4" /> {busy ? "Reading photo…" : "Add a photo"}
                 </button>
