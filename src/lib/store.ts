@@ -181,7 +181,6 @@ export function usePool(): Question[] {
 
 export function useNow() {
   const offset = useSamajh((s) => s.clockOffsetDays);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => Date.now() + offset * DAY, [offset]);
 }
 
