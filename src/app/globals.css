@@ -1,26 +1,154 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Samajh — "ink means knowledge, red pen means misconception" */
+@theme {
+  --color-paper: #fdfdfb;
+  --color-sheet: #ffffff;
+  --color-ink: #1f3bb3; /* royal-blue school ink: mastery */
+  --color-ink-soft: #dfe5fa;
+  --color-ink-wash: #f1f4fd;
+  --color-navy: #16204a; /* text */
+  --color-slate: #5a6283; /* secondary text */
+  --color-faint: #8d93ab;
+  --color-rule: #e3e6ee;
+  --color-grid: #dcebe2; /* graph-paper green */
+  --color-grid-strong: #c4dccd;
+  --color-redpen: #e03131; /* only ever marks a misconception */
+  --color-redpen-wash: #fdeeee;
+  --color-highlight: #ffe45c; /* "do this next" */
+  --color-highlight-wash: #fff7c7;
+  --color-good: #157f5b;
+  --color-good-wash: #e6f4ee;
+
+  --font-sans: var(--font-anek), "Anek Latin", ui-sans-serif, system-ui, sans-serif;
+  --font-deva: var(--font-anek-deva), "Anek Devanagari", var(--font-anek), sans-serif;
+  --font-hand: var(--font-kalam), "Kalam", cursive;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Keyframes live outside @theme: they're referenced from inline styles, which Tailwind can't see,
+   so they must always be emitted. */
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
 }
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes write {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes ping-once {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
   }
 }
 
+:root {
+  color-scheme: light;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-navy);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Graph paper: 8px minor, 40px major — only on canvases (map, question sheet) */
+.graph-paper {
+  background-color: var(--color-sheet);
+  background-image:
+    linear-gradient(var(--color-grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid-strong) 1px, transparent 1px),
+    linear-gradient(var(--color-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-grid) 1px, transparent 1px);
+  background-size:
+    40px 40px,
+    40px 40px,
+    8px 8px,
+    8px 8px;
+  background-position: -1px -1px;
+}
+
+.graph-paper-faint {
+  background-color: var(--color-sheet);
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-grid) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-grid) 70%, transparent) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Wide, title-block style headlines using Anek's width axis */
+.display {
+  font-variation-settings: "wdth" 118;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+}
+.condensed {
+  font-variation-settings: "wdth" 82;
+}
+
+.hand {
+  font-family: var(--font-hand);
+}
+.deva {
+  font-family: var(--font-deva);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Highlighter stroke behind text (used only for "do this next") */
+.highlighter {
+  background: linear-gradient(
+    100deg,
+    transparent 0.4em,
+    color-mix(in srgb, var(--color-highlight) 85%, transparent) 0.5em,
+    var(--color-highlight) 96%,
+    transparent 99%
+  );
+  border-radius: 0.2em 0.6em 0.3em 0.5em;
+  padding: 0 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
+
+::selection {
+  background: var(--color-highlight);
+  color: var(--color-navy);
 }
