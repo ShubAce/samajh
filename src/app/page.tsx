@@ -75,7 +75,9 @@ export default function Landing() {
             <h1 className="display mt-7 text-[50px] font-extrabold text-navy sm:text-[68px] lg:text-[76px]" style={{ textWrap: "balance", lineHeight: 1.1 }}>
               Find out{" "}
               <span className="relative inline-block">
-                <RedPenCircle delay={700}>why</RedPenCircle>
+                <RedPenCircle delay={700} tight>
+                  why
+                </RedPenCircle>
               </span>{" "}
               you got it wrong.
             </h1>

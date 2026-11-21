@@ -11,11 +11,14 @@ export function RedPenCircle({
   className,
   delay = 0,
   animate = true,
+  tight = false,
 }: {
   children: React.ReactNode;
   className?: string;
   delay?: number;
   animate?: boolean;
+  /** smaller vertical overshoot, for large headline words */
+  tight?: boolean;
 }) {
   return (
     <span className={cn("relative inline-block", className)}>
@@ -24,7 +27,11 @@ export function RedPenCircle({
       <span
         aria-hidden
         className="pointer-events-none absolute"
-        style={{ left: "calc(-6% - 7px)", right: "calc(-6% - 7px)", top: "calc(-34% - 6px)", bottom: "calc(-34% - 6px)" }}
+        style={
+          tight
+            ? { left: "calc(-9% - 6px)", right: "calc(-9% - 6px)", top: "calc(-6% - 2px)", bottom: "calc(-10% - 2px)" }
+            : { left: "calc(-6% - 7px)", right: "calc(-6% - 7px)", top: "calc(-34% - 6px)", bottom: "calc(-34% - 6px)" }
+        }
       >
       <svg
         className="block h-full w-full overflow-visible"
