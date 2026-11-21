@@ -3,14 +3,16 @@
 import { ArrowRight, AudioLines, Camera, GitBranch, GraduationCap, Keyboard, Repeat, ShieldCheck, Sigma, Users } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { InkBar } from "@/components/Ink";
 import { Logo } from "@/components/Logo";
 import { Handwriting, MarginNote, RedPenCircle } from "@/components/RedPen";
 import { Button, ButtonLink } from "@/components/ui";
 import { MISCONCEPTIONS } from "@/lib/curriculum/misconceptions";
 import { CONCEPTS } from "@/lib/curriculum/concepts";
+import { ConceptMap } from "@/components/ConceptMap";
 import { syntheticClass } from "@/lib/seed/class";
+import { buildDemo } from "@/lib/seed/demo";
 import { useHydrated, useSamajh } from "@/lib/store";
 
 export default function Landing() {
@@ -74,9 +76,10 @@ export default function Landing() {
         </section>
 
         <section className="border-y border-rule bg-white">
-          <div className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
+          <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div>
             <h2 className="display max-w-[24ch] text-[32px] font-bold text-navy sm:text-[38px]">From one wrong answer to a fixed idea</h2>
-            <ol className="mt-10 grid gap-8 md:grid-cols-3">
+            <ol className="mt-10 grid gap-8">
               <Step
                 n={1}
                 title="Diagnose in ten questions"
@@ -93,6 +96,8 @@ export default function Landing() {
                 body="Targeted questions challenge the faulty idea until you get past the trap twice. Spaced reviews come back just before you'd forget, all the way to the board exam."
               />
             </ol>
+            </div>
+            <MapPreview onOpen={() => { loadDemo(); router.push("/learn"); }} />
           </div>
         </section>
 
@@ -166,6 +171,33 @@ export default function Landing() {
         <p>Built in one day for the Product Space Agentic AI Hackathon, 21 November 2026.</p>
       </footer>
     </div>
+  );
+}
+
+/** The real product: a demo student's concept map, rendered live from the same engine. */
+function MapPreview({ onOpen }: { onOpen: () => void }) {
+  const hydrated = useHydrated();
+  const demo = useMemo(() => buildDemo(Date.now()), []);
+  return (
+    <figure className="relative">
+      <div className="graph-paper overflow-hidden rounded-[18px] border border-grid-strong p-4 shadow-[0_30px_60px_-40px_rgba(22,32,74,.55)] sm:p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2 px-1 pb-2">
+          <p className="hand text-[21px] leading-none text-ink">Aarav&rsquo;s map, three weeks in</p>
+          <button type="button" onClick={onOpen} className="text-[13.5px] font-semibold text-ink underline-offset-2 hover:underline">
+            Open it
+          </button>
+        </div>
+        {hydrated ? (
+          <ConceptMap states={demo.snap.states} misconceptions={demo.snap.misconceptions} showLegend={false} />
+        ) : (
+          <div className="aspect-[1.4] animate-pulse rounded-lg bg-navy/[.04]" />
+        )}
+      </div>
+      <figcaption className="mt-3 px-1 text-[13.5px] leading-snug text-slate">
+        Each well fills with ink as mastery grows. Red loops mark misconceptions that are still active. Lines run from a
+        prerequisite to what it unlocks.
+      </figcaption>
+    </figure>
   );
 }
 

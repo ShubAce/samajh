@@ -259,6 +259,7 @@ function Session({ plan }: { plan: Plan }) {
               why={current.why}
               predicted={current.predicted}
               mode={plan.mode === "review" ? "review" : plan.mode === "fix" ? "fix" : "practice"}
+              number={step + 1}
               nextLabel={step + 1 >= plan.steps.length ? "Finish session" : "Next question"}
               onAnswered={(a) => {
                 setResults((r) => [...r, a]);

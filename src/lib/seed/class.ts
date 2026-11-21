@@ -89,7 +89,7 @@ export function syntheticClass(): ClassStudent[] {
   const r = mulberry32(1021);
   const order = topoOrder();
   _class = NAMES.map((name, i) => {
-    const ability = clamp(0.64 + gauss(r) * 0.15, 0.22, 0.95);
+    const ability = clamp(0.64 + gauss(r) * 0.14, 0.36, 0.95);
     const chBias: Record<string, number> = Object.fromEntries(CHAPTERS.map((c) => [c.id, gauss(r) * 0.09]));
     const mis = MISCONCEPTIONS.filter((m) => r() < clamp((PREVALENCE[m.id] ?? 0.15) * (1.55 - ability), 0, 0.85)).map(
       (m) => m.id,

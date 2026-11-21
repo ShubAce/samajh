@@ -26,6 +26,7 @@ export function QuestionSheet({
   onNext,
   nextLabel = "Next question",
   onAnswered,
+  number,
 }: {
   question: Question;
   why?: string;
@@ -35,6 +36,8 @@ export function QuestionSheet({
   onNext: (attempt: Attempt) => void;
   nextLabel?: string;
   onAnswered?: (attempt: Attempt) => void;
+  /** question number, written in the notebook margin */
+  number?: number;
 }) {
   const commitAttempt = useSamajh((s) => s.commitAttempt);
   const discovered = useSamajh((s) => s.discovered);
@@ -106,7 +109,14 @@ export function QuestionSheet({
 
   return (
     <div className="graph-paper-faint overflow-hidden rounded-[16px] border border-rule shadow-[0_18px_40px_-28px_rgba(22,32,74,.45)]">
-      <div className="bg-white/92 px-4 pb-5 pt-4 backdrop-blur-[1px] sm:px-7 sm:pb-7 sm:pt-6">
+      <div className="relative bg-white/92 pb-5 pl-12 pr-4 pt-4 sm:pb-7 sm:pl-[76px] sm:pr-7 sm:pt-6">
+        {/* exam-sheet margin: red rule + the question number in pen */}
+        <span aria-hidden className="absolute inset-y-0 left-9 w-[1.5px] bg-redpen/35 sm:left-[60px]" />
+        {number !== undefined && (
+          <span aria-hidden className="hand absolute left-1.5 top-[18px] text-[20px] leading-none text-redpen/85 sm:left-4 sm:top-[26px] sm:text-[23px]">
+            Q{number}.
+          </span>
+        )}
         {header}
         <div className="flex flex-wrap items-center gap-2">
           <Pill tone="ink">{concept?.title}</Pill>
@@ -254,13 +264,19 @@ function AnalyzingTrace({ mode, conceptId }: { mode: "text" | "voice" | "photo";
   );
 }
 
+/** Find the model's evidence quote inside the student's words; tolerant of punctuation and spacing differences. */
 function highlightQuote(text: string, quote?: string) {
-  if (!quote) return null;
-  const q = quote.replace(/^["“”']+|["“”']+$/g, "").trim();
+  if (!quote || !text) return null;
+  const q = quote.replace(/^["“”'‘’]+|["“”'‘’]+$/g, "").trim();
   if (q.length < 4) return null;
+  const split = (i: number, len: number) => ({ before: text.slice(0, i), match: text.slice(i, i + len), after: text.slice(i + len) });
   const idx = text.toLowerCase().indexOf(q.toLowerCase());
-  if (idx < 0) return null;
-  return { before: text.slice(0, idx), match: text.slice(idx, idx + q.length), after: text.slice(idx + q.length) };
+  if (idx >= 0) return split(idx, q.length);
+  const words = q.match(/[\p{L}\p{N}]+/gu) ?? [];
+  if (words.length < 2) return null;
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const m = new RegExp(words.map(esc).join("[^\\p{L}\\p{N}]+"), "iu").exec(text);
+  return m ? split(m.index, m[0].length) : null;
 }
 
 function Feedback({
@@ -311,6 +327,14 @@ function Feedback({
         <h3 className="text-[21px] font-semibold text-navy display" style={{ fontVariationSettings: '"wdth" 108' }}>
           {title}
         </h3>
+        {attempt.masteryAfter - attempt.masteryBefore >= 0.01 && (
+          <span
+            className="tabular inline-flex h-7 items-center rounded-full bg-ink px-2.5 text-[13.5px] font-bold text-white"
+            style={{ animation: "pop-in 520ms cubic-bezier(.2,.9,.3,1.2) 150ms both" }}
+          >
+            +{Math.round((attempt.masteryAfter - attempt.masteryBefore) * 100)}% mastery
+          </span>
+        )}
         {a?.engine === "gemini" && a.language && a.language !== "English" && <Pill tone="ink">Understood {a.language}</Pill>}
       </div>
 

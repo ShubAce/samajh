@@ -49,6 +49,7 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
 function TeacherDashboard() {
   const { roster, liveId } = useRoster();
   const discovered = useSamajh((s) => s.discovered);
+  const [openCluster, setOpenCluster] = useState<string | null>(null);
   const n = roster.length;
 
   const clusters = useMemo(() => {
@@ -92,12 +93,24 @@ function TeacherDashboard() {
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-        <Clusters clusters={clusters} n={n} />
+      <Priorities
+        clusters={clusters}
+        roster={roster}
+        n={n}
+        onOpenCluster={(id) => {
+          setOpenCluster(id);
+          requestAnimationFrame(() => document.getElementById(`cluster-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+        }}
+      />
+
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+        <Clusters clusters={clusters} n={n} open={openCluster} setOpen={setOpenCluster} />
         <Gaps gaps={gaps} n={n} classMean={classMean} />
       </div>
 
-      <Proposals />
+      <div id="proposals">
+        <Proposals />
+      </div>
       <Heatmap roster={roster} liveId={liveId} />
     </div>
   );
@@ -105,15 +118,89 @@ function TeacherDashboard() {
 
 type Cluster = { id: string; students: ClassStudent[]; def?: Misconception };
 
-function Clusters({ clusters, n }: { clusters: Cluster[]; n: number }) {
-  const [open, setOpen] = useState<string | null>(null);
+function Priorities({
+  clusters,
+  roster,
+  n,
+  onOpenCluster,
+}: {
+  clusters: Cluster[];
+  roster: ClassStudent[];
+  n: number;
+  onOpenCluster: (id: string) => void;
+}) {
+  const pending = useSamajh((s) => s.proposals.filter((p) => p.status === "pending").length);
+  const top = clusters[0];
+  const struggling = [...roster]
+    .filter((s) => s.id !== "live")
+    .map((s) => ({ s, m: avg(Object.values(s.mastery)) }))
+    .sort((a, b) => a.m - b.m)
+    .slice(0, 3);
+  const items: { title: string; body: string; action: React.ReactNode }[] = [];
+  if (top)
+    items.push({
+      title: `Reteach "${top.def!.title.toLowerCase()}"`,
+      body: `${top.students.length} of ${n} students hold this idea. One 10-minute lesson fixes it across ${top.def!.conceptIds.length} concepts.`,
+      action: (
+        <Button size="sm" onClick={() => onOpenCluster(top.id)}>
+          <Sparkles className="size-3.5" /> Plan it
+        </Button>
+      ),
+    });
+  items.push({
+    title: `Check in with ${struggling.map((x) => x.s.name.split(" ")[0]).join(", ")}`,
+    body: `Lowest mastery in the class (${struggling.map((x) => pct(x.m)).join(", ")}). Most of their gaps sit on shared prerequisites.`,
+    action: null,
+  });
+  if (pending)
+    items.push({
+      title: `Review ${pending} new misconception${pending > 1 ? "s" : ""}`,
+      body: "Samajh found faulty ideas that aren't in the library yet. Nothing is added without you.",
+      action: (
+        <Button size="sm" variant="outline" onClick={() => document.getElementById("proposals")?.scrollIntoView({ behavior: "smooth" })}>
+          Review
+        </Button>
+      ),
+    });
+  return (
+    <section className="rounded-[16px] border border-[#f0d23a] bg-highlight-wash px-5 py-5 sm:px-6" aria-labelledby="priorities">
+      <h2 id="priorities" className="text-[17px] font-bold text-navy">
+        This week&rsquo;s priorities, chosen by Samajh
+      </h2>
+      <ol className="mt-3 grid gap-3 lg:grid-cols-3">
+        {items.map((it, i) => (
+          <li key={it.title} className="flex gap-3 rounded-[12px] bg-white/80 p-4 ring-1 ring-[#f0d23a]/60">
+            <span className="hand text-[26px] leading-none text-ink">{i + 1}.</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[15.5px] font-bold leading-snug text-navy">{it.title}</p>
+              <p className="mt-1 text-[13.5px] leading-snug text-slate">{it.body}</p>
+              {it.action && <div className="mt-3">{it.action}</div>}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+function Clusters({
+  clusters,
+  n,
+  open,
+  setOpen,
+}: {
+  clusters: Cluster[];
+  n: number;
+  open: string | null;
+  setOpen: (fn: (o: string | null) => string | null) => void;
+}) {
   return (
     <Sheet className="p-5 sm:p-6">
       <h2 className="text-[19px] font-bold text-navy">Misconceptions spreading in the class</h2>
       <p className="mt-1 text-[14px] text-slate">Grouped by the faulty idea behind the wrong answers, not by chapter. Fix one idea and marks improve across several topics.</p>
       <ul className="mt-4 grid gap-3">
         {clusters.slice(0, 7).map((c) => (
-          <li key={c.id} className="rounded-[12px] border border-navy/10 bg-white">
+          <li key={c.id} id={`cluster-${c.id}`} className={cn("rounded-[12px] border bg-white transition-colors", open === c.id ? "border-redpen/40" : "border-navy/10")}>
             <button
               type="button"
               className="flex w-full items-start gap-3 px-4 py-3 text-left"

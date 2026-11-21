@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ConceptMap } from "@/components/ConceptMap";
-import { InkBar, InkDot } from "@/components/Ink";
+import { InkBar, InkDot, InkTube, InkWell } from "@/components/Ink";
 import { MarginNote } from "@/components/RedPen";
 import { Button, ButtonLink, Pill, Sheet } from "@/components/ui";
 import { CHAPTERS, CONCEPT_BY_ID, CONCEPTS, descendantsOf } from "@/lib/curriculum/concepts";
@@ -48,25 +48,29 @@ function LearnHome() {
   const checked = CONCEPTS.filter((c) => (s.states[c.id]?.attempts ?? 0) > 0).length;
   const chapters = chapterMastery(s.states);
 
+  const activeMis = Object.values(s.misconceptions).filter((m) => m.status !== "resolved").length;
+  const dueNow = Object.values(s.cards).filter((c) => c.due <= now).length;
+
   return (
     <div className="grid gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+      <Sheet className="graph-paper-faint flex flex-wrap items-center gap-x-8 gap-y-5 px-5 py-5 sm:px-7">
+        <InkWell p={overall} caption="overall mastery" />
+        <div className="min-w-[260px] flex-1">
           <p className="text-[15px] text-slate">Hi {s.student.name}. Here&rsquo;s what Samajh thinks you understand right now.</p>
-          <h1 className="display mt-1 text-[34px] font-bold text-navy sm:text-[40px]">Your Class 10 Physics map</h1>
+          <h1 className="display mt-1 text-[32px] font-bold text-navy sm:text-[38px]">Your Class 10 Physics map</h1>
+          <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+            {CHAPTERS.map((c) => (
+              <InkTube key={c.id} label={c.short} p={chapters[c.id]} />
+            ))}
+          </div>
         </div>
-        <div className="flex flex-wrap gap-x-6 gap-y-1 text-[14.5px] text-slate">
-          <span>
-            <strong className="tabular text-navy">{pct(overall)}</strong> overall mastery
-          </span>
-          <span>
-            <strong className="tabular text-navy">{secure}</strong> of {CONCEPTS.length} concepts secure
-          </span>
-          <span>
-            <strong className="tabular text-navy">{checked}</strong> checked directly
-          </span>
-        </div>
-      </div>
+        <dl className="grid min-w-[190px] gap-2 border-navy/10 text-[14px] sm:border-l sm:pl-7">
+          <Stat value={`${secure}/${CONCEPTS.length}`} label="concepts secure" />
+          <Stat value={String(checked)} label="checked directly" />
+          <Stat value={String(activeMis)} label={activeMis === 1 ? "misconception to fix" : "misconceptions to fix"} tone={activeMis ? "red" : undefined} />
+          <Stat value={String(dueNow)} label={dueNow === 1 ? "review due" : "reviews due"} />
+        </dl>
+      </Sheet>
 
       <NextActionCard action={action} />
 
@@ -76,15 +80,8 @@ function LearnHome() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-rule px-5 py-3">
             <p className="flex items-center gap-2 text-[15px] font-semibold text-navy">
               <Network className="size-4 text-ink" /> Concept graph
-              <span className="font-normal text-slate">Each line runs from a prerequisite to the concept it unlocks</span>
             </p>
-            <div className="flex flex-wrap gap-3">
-              {CHAPTERS.map((c) => (
-                <span key={c.id} className="inline-flex items-center gap-1.5 text-[13px] text-slate">
-                  {c.short} <strong className="tabular text-navy">{pct(chapters[c.id])}</strong>
-                </span>
-              ))}
-            </div>
+            <p className="text-[13.5px] text-slate">Each line runs from a prerequisite to the concept it unlocks. Click a concept for details.</p>
           </div>
           <div className="graph-paper overflow-x-auto px-3 pb-4 pt-3 sm:px-5">
             <div className="min-w-[760px]">
@@ -112,6 +109,15 @@ function LearnHome() {
           <ReviewList />
         </div>
       </div>
+    </div>
+  );
+}
+
+function Stat({ value, label, tone }: { value: string; label: string; tone?: "red" }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt className={cn("tabular w-12 text-right text-[19px] font-bold", tone === "red" ? "text-redpen" : "text-navy")}>{value}</dt>
+      <dd className="text-slate">{label}</dd>
     </div>
   );
 }

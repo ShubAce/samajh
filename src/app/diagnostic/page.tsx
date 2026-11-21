@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { ConceptMap } from "@/components/ConceptMap";
-import { InkBar } from "@/components/Ink";
+import { InkBar, InkWell } from "@/components/Ink";
 import { MarginNote } from "@/components/RedPen";
 import { QuestionSheet } from "@/components/QuestionSheet";
 import { Button, ButtonLink, Sheet } from "@/components/ui";
@@ -17,6 +17,7 @@ import {
   actionHref,
   chapterMastery,
   nextBestAction,
+  overallMastery,
   pickDiagnostic,
   type Pick,
 } from "@/lib/engine/policy";
@@ -165,6 +166,7 @@ function Runner({ onFinish }: { onFinish: () => void }) {
           why={current.why}
           predicted={current.predicted}
           mode="diagnostic"
+          number={index}
           nextLabel={asked >= DIAGNOSTIC_LENGTH ? "See my map" : "Next question"}
           onAnswered={(a) => {
             setLastAttempt(a);
@@ -235,11 +237,14 @@ function Results() {
 
   return (
     <div className="grid gap-6">
-      <div>
-        <p className="text-[15px] text-slate">
-          {correct} of {diag.length} correct. Samajh estimated all {CONCEPTS.length} concepts from these answers.
-        </p>
-        <h1 className="display mt-1 text-[36px] font-bold text-navy sm:text-[42px]">Your map is ready</h1>
+      <div className="flex flex-wrap items-center gap-6">
+        <InkWell p={overallMastery(s.states)} caption="first estimate" />
+        <div>
+          <p className="text-[15px] text-slate">
+            {correct} of {diag.length} correct. Samajh estimated all {CONCEPTS.length} concepts from these answers.
+          </p>
+          <h1 className="display mt-1 text-[36px] font-bold text-navy sm:text-[42px]">Your map is ready</h1>
+        </div>
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Sheet className="graph-paper overflow-x-auto p-4 sm:p-5">
