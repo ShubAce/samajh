@@ -43,3 +43,22 @@ next-env.d.ts
 
 # local browser-test artifacts
 .playwright-mcp/
+
+# OS files (Windows / OneDrive / macOS)
+Thumbs.db
+desktop.ini
+ehthumbs.db
+.DS_Store
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# logs
+*.log
+logs/
+
+# local AI-agent folders
+.claude/
+.agents/
