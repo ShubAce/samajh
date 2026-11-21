@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { FALLBACK_MODEL, PRIMARY_MODEL, gemini, hasGemini } from "@/lib/server/gemini";
+import { MODEL_CHAIN, gemini, hasGemini } from "@/lib/server/gemini";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const base = { gemini: hasGemini(), model: PRIMARY_MODEL, fallback: FALLBACK_MODEL };
+  const base = { gemini: hasGemini(), models_in_chain: MODEL_CHAIN };
   if (!hasGemini() || url.searchParams.get("models") !== "1") return NextResponse.json(base);
   try {
     const names: string[] = [];

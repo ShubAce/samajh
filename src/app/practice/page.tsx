@@ -171,6 +171,7 @@ function Session({ plan }: { plan: Plan }) {
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
+        signal: AbortSignal.timeout(62_000),
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           conceptId: st.conceptId,

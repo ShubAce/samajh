@@ -24,7 +24,7 @@ Your job is to analyse HOW the student reasoned — not just whether the final a
 
 Rules:
 - Base every judgement on the student's own words, speech or handwriting. Put an exact quote of the decisive part in evidenceQuote.
-- Students may write or speak in English, Hindi or Hinglish. Understand all three. Reply in the same language mix the student used (default: simple English).
+- Students may write or speak in English, Hindi or Hinglish. Understand all three. Decide the language ONLY from the student's own words and put it in "language". Reply in that same language: English reasoning gets simple English; Hindi or Hinglish reasoning gets natural Hinglish in Roman script, the way an Indian teacher would talk. Keep physics terms (current, resistance, series) in English.
 - Prefer the curated misconception list. Only fill novelMisconception when the reasoning shows a clear, specific faulty mental model that none of the listed ones describes.
 - A correct final answer can still hide a misconception. If the reasoning is physically wrong, the verdict is "misconception" even though the answer is correct.
 - Verdicts: "sound" = correct physics reasoning; "misconception" = a faulty mental model; "slip" = right method but an arithmetic, unit or reading mistake; "incomplete" = partly right but missing a key idea; "guess" = no real physics reasoning.
@@ -33,6 +33,7 @@ Rules:
 - faultyStep: the exact step or sentence where the reasoning breaks (empty if sound).
 - confidence: 0 to 1, how sure you are about the diagnosis.`;
 
+// Field order matters: the model commits to the student's language before it writes feedback.
 const SCHEMA = {
   type: "object",
   properties: {
@@ -40,6 +41,11 @@ const SCHEMA = {
       type: "string",
       description:
         "Verbatim transcription of the student's spoken or handwritten reasoning (empty if they typed it).",
+    },
+    language: {
+      type: "string",
+      enum: ["English", "Hindi", "Hinglish"],
+      description: "Language of the STUDENT's own words. Feedback and hint must be written in this language.",
     },
     verdict: { type: "string", enum: ["sound", "misconception", "slip", "incomplete", "guess"] },
     misconceptionIds: {
@@ -59,12 +65,24 @@ const SCHEMA = {
     faultyStep: { type: "string" },
     evidenceQuote: { type: "string" },
     confidence: { type: "number" },
-    feedback: { type: "string" },
-    hint: { type: "string" },
-    language: { type: "string", description: "English, Hindi or Hinglish" },
+    feedback: { type: "string", description: "in the student's language (see language)" },
+    hint: { type: "string", description: "in the student's language (see language)" },
   },
-  required: ["verdict", "misconceptionIds", "confidence", "feedback"],
+  required: ["language", "verdict", "misconceptionIds", "confidence", "feedback"],
 };
+
+const HINDI_FUNCTION_WORDS = new Set(
+  "hai hain nahi nahin toh kya ka ki ke mein aur isliye kyunki kyonki jaata jata jaati hota hoti hote leta leti lete raha rahi rahe wala wali yeh woh wo se bhi sab sabse zyada jyada kam dono jab tab agar kar karta karti kuch matlab lagta laga".split(" "),
+);
+
+/** deterministic language hint for typed reasoning */
+function typedLanguage(text?: string): "English" | "Hindi" | "Hinglish" | null {
+  if (!text?.trim()) return null;
+  if (/[ऀ-ॿ]/.test(text)) return "Hindi";
+  const words = text.toLowerCase().match(/[a-z]+/g) ?? [];
+  const hits = words.filter((w) => HINDI_FUNCTION_WORDS.has(w)).length;
+  return hits >= 2 && hits / Math.max(1, words.length) > 0.12 ? "Hinglish" : "English";
+}
 
 function describeQuestion(q: Question) {
   return [
@@ -123,6 +141,9 @@ export async function POST(req: Request) {
       : media?.kind === "image"
         ? "The student's reasoning is the handwritten working in the attached photo. Transcribe the relevant lines into transcript first, then analyse them step by step."
         : `Student's reasoning (typed): """${reasoningText}"""`,
+    typedLanguage(reasoningText)
+      ? `The student wrote in ${typedLanguage(reasoningText)}. Write feedback and hint in ${typedLanguage(reasoningText) === "English" ? "simple English" : "natural Hinglish (Roman script)"}.`
+      : "",
   ].join("\n");
 
   const parts: Part[] = [{ text: brief }];
@@ -135,6 +156,10 @@ export async function POST(req: Request) {
       schema: SCHEMA,
       thinking: "low",
       label: "analyze",
+      timeoutMs: media?.kind === "audio" ? 14_000 : 16_000,
+      budgetMs: 40_000,
+      // 2.5-flash handled audio fastest in testing; text and photos go to the primary chain
+      prefer: media?.kind === "audio" ? ["gemini-2.5-flash"] : undefined,
     });
     const known = new Set([...candidates.keys(), ...Object.keys(MISCONCEPTION_BY_ID)]);
     const analysis: ReasoningAnalysis = {

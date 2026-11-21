@@ -21,7 +21,8 @@ Your questions are used by an adaptive tutor that diagnoses misconceptions, so e
 
 Rules:
 - Exactly 4 options with ids A, B, C, D and exactly one correct answer.
-- Each wrong option should be precisely what a student holding a specific misconception would choose. Tag it with that misconception id from the list provided, or null if it is a generic distractor. The correct option's misconceptionId is null.
+- Each wrong option should be precisely what a student holding a specific misconception would choose. Tag it with that misconception id from the list provided, or an empty string if it is a generic distractor. The correct option's misconceptionId is an empty string.
+- Write every option as plausibly and confidently as the correct one, in the student's own way of thinking. Never name the error inside an option (no "because current is consumed"), and never include an absurd option nobody would pick. Options should be similar in length.
 - Physics must be exactly right. For numeric questions, compute the answer yourself and double-check, including New Cartesian sign convention (real object: u negative; concave mirror f negative; convex lens f positive; mirror 1/v + 1/u = 1/f, m = −v/u; lens 1/v − 1/u = 1/f, m = v/u).
 - No images. Describe circuits and ray setups precisely in words. Use Unicode symbols (Ω, ², ₁, ×, ⁻) — never LaTeX.
 - Stem ≤ 45 words. Options ≤ 18 words. Indian context is welcome (220 V mains, 50 Hz, household appliances, kWh bills).
@@ -41,7 +42,7 @@ const GEN_SCHEMA = {
         properties: {
           id: { type: "string", enum: ["A", "B", "C", "D"] },
           text: { type: "string" },
-          misconceptionId: { type: ["string", "null"] },
+          misconceptionId: { type: "string", description: "misconception id this distractor catches, or an empty string" },
         },
         required: ["id", "text", "misconceptionId"],
       },
@@ -124,7 +125,9 @@ export async function POST(req: Request) {
     .join("\n");
 
   const t0 = Date.now();
+  const left = () => 55_000 - (Date.now() - t0);
   for (let attempt = 0; attempt < 2; attempt++) {
+    if (left() < 20_000) break;
     try {
       const gen = await generateJSON<Draft>({
         system: GEN_SYSTEM,
@@ -132,6 +135,8 @@ export async function POST(req: Request) {
         schema: GEN_SCHEMA,
         thinking: "medium",
         label: "generate",
+        timeoutMs: 22_000,
+        budgetMs: Math.min(30_000, left() - 12_000),
       });
       const draft = gen.data;
       if (!draft?.options || draft.options.length !== 4 || !IDS.includes(draft.answer)) continue;
@@ -153,6 +158,8 @@ export async function POST(req: Request) {
         schema: SOLVER_SCHEMA,
         thinking: "medium",
         label: "verify",
+        timeoutMs: 18_000,
+        budgetMs: Math.max(5_000, left() - 2_000),
       });
       const agreed = solver.data.valid && solver.data.answer === shuffled.answer;
       if (!agreed) continue;

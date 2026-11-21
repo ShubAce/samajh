@@ -153,6 +153,7 @@ function ClusterDetail({ cluster, n }: { cluster: Cluster; n: number }) {
     try {
       const res = await fetch("/api/reteach", {
         method: "POST",
+        signal: AbortSignal.timeout(50_000),
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           misconceptionId: cluster.id,

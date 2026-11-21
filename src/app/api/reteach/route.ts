@@ -20,7 +20,9 @@ interface Body {
 const SYSTEM = `You are an experienced CBSE Class 10 physics teacher and teacher-coach in India.
 You turn class-wide misconception data into a practical 10-minute reteach plan for a regular classroom (about 40 students, a blackboard, and only simple items: cells, bulbs, wires, a torch, mirrors, lenses, a glass of water, a compass).
 Use cognitive conflict: first make students predict, then show the result that contradicts the faulty idea, then explain.
-Be concrete and brief. No fluff, no generic advice.`;
+Be concrete and brief. No fluff, no generic advice.
+Physics accuracy is non-negotiable. Every statement, step and exit question must be correct for ideal Class 10 circuits and optics. Never write a question with a false premise (for example, identical bulbs in series glow equally brightly, so never ask why one of them is dimmer). Before answering, re-check each exit question and its answer.
+The activity should fit in 10 minutes in total.`;
 
 const SCHEMA = {
   type: "object",
@@ -103,8 +105,10 @@ export async function POST(req: Request) {
       system: SYSTEM,
       parts: [{ text: brief }],
       schema: SCHEMA,
-      thinking: "low",
+      thinking: "medium",
       label: "reteach",
+      timeoutMs: 25_000,
+      budgetMs: 45_000,
     });
     return NextResponse.json({ ...data, engine: "gemini", meta: { model, ms } });
   } catch (e) {

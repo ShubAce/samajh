@@ -63,6 +63,7 @@ export function QuestionSheet({
       try {
         const res = await fetch("/api/analyze", {
           method: "POST",
+          signal: AbortSignal.timeout(45_000),
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             question,
